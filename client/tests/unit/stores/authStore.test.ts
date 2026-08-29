@@ -670,6 +670,17 @@ describe('authStore', () => {
       expect(useAuthStore.getState().hasMapsKey).toBe(false);
     });
 
+    it('updateApiKeys mirrors an amap_api_key into hasAmapKey', async () => {
+      const updatedUser = buildUser();
+      server.use(http.put('/api/auth/me/api-keys', () => HttpResponse.json({ user: updatedUser })));
+
+      await useAuthStore.getState().updateApiKeys({ amap_api_key: 'amap-k' });
+      expect(useAuthStore.getState().hasAmapKey).toBe(true);
+
+      await useAuthStore.getState().updateApiKeys({ amap_api_key: null });
+      expect(useAuthStore.getState().hasAmapKey).toBe(false);
+    });
+
     it('updateApiKeys surfaces the server message', async () => {
       server.use(http.put('/api/auth/me/api-keys', () =>
         HttpResponse.json({ error: 'Rejected' }, { status: 400 })));

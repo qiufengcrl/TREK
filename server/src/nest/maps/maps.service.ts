@@ -16,6 +16,13 @@ import { PlacePhotoCacheService } from '../place-photos/place-photo-cache.servic
 import { DatabaseService } from '../database/database.service';
 import { nominatimFetch, type GeoLane } from '../geo/nominatim.client';
 import {
+  isAmapPlaceId,
+  searchAmap,
+  autocompleteAmap,
+  detailsAmap,
+  reverseAmap,
+} from '../geo/amap.client';
+import {
   UA,
   SEARCH_TEXT_FIELD_MASK,
   toApiLang,
@@ -603,6 +610,18 @@ export class MapsService {
 
   getMapsKey(userId: number): string | null {
     return this.resolveMapsKey(userId).key;
+  }
+
+  /**
+   * 高德 Web 服务密钥：环境变量 AMAP_API_KEY → 管理后台实例密钥。
+   * 没有用户列，国内部署用实例级一把钥匙即可。
+   */
+  resolveAmapKey(userId: number): { key: string | null; source: ApiKeySource | null } {
+    return resolveApiKey(this.database, 'amap_api_key', userId, readEnv().maps.amapApiKey);
+  }
+
+  getAmapKey(userId: number): string | null {
+    return this.resolveAmapKey(userId).key;
   }
 
   // ── Nominatim search ───────────────────────────────────────────────────────
@@ -1453,6 +1472,12 @@ export class MapsService {
     lang?: string,
     locationBias?: { lat: number; lng: number; radius?: number },
   ): Promise<{ places: Record<string, unknown>[]; source: string }> {
+    const amapKey = this.getAmapKey(userId);
+    if (amapKey) {
+      const places = await searchAmap(amapKey, query);
+      return { places, source: 'amap' };
+    }
+
     const { key: apiKey, source: keySource } = this.resolveMapsKey(userId);
 
     if (!apiKey) {
@@ -1524,6 +1549,11 @@ export class MapsService {
     locationBias?: { low: { lat: number; lng: number }; high: { lat: number; lng: number } },
     sessionToken?: string,
   ): Promise<{ suggestions: { placeId: string; mainText: string; secondaryText: string }[]; source: string }> {
+    const amapKey = this.getAmapKey(userId);
+    if (amapKey) {
+      return autocompleteAmap(amapKey, input);
+    }
+
     const { key: apiKey, source: keySource } = this.resolveMapsKey(userId);
 
     if (!apiKey) {
@@ -1612,6 +1642,13 @@ export class MapsService {
     lang?: string,
     sessionToken?: string,
   ): Promise<{ place: Record<string, unknown> | null }> {
+    if (isAmapPlaceId(placeId)) {
+      const amapKey = this.getAmapKey(userId);
+      if (!amapKey) return { place: null };
+      const place = await detailsAmap(amapKey, placeId);
+      return { place };
+    }
+
     // OSM details: placeId is "node:123456" or "way:123456" etc.
     if (placeId.includes(':')) {
       const [osmType, osmId] = placeId.split(':');
@@ -1999,6 +2036,11 @@ export class MapsService {
     lang?: string,
     opts?: { lane?: GeoLane; timeoutMs?: number },
   ): Promise<{ name: string | null; address: string | null }> {
+    const amapKey = this.getAmapKey(0);
+    if (amapKey) {
+      return reverseAmap(amapKey, lat, lng);
+    }
+
     const params = new URLSearchParams({
       lat,
       lon: lng,

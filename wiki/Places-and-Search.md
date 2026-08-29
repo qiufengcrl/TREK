@@ -15,6 +15,10 @@ Type in the search box at the top of the form. After 2 or more characters, with 
 - Use **↑ / ↓** to navigate results, **Enter** to select, **Esc** to dismiss.
 - Search results are biased toward the geographic center of your existing trip places. When those places span more than ~500 km, the bias is skipped.
 
+### With an Amap (Gaode) key
+
+> **Admin:** For installs in China, set a 高德 **Web 服务** key in **Admin → Settings → API Keys**, or `AMAP_API_KEY` in the environment. When it is present, place search, autocomplete, details and reverse geocoding go to Amap first. Coordinates are converted from GCJ-02 to WGS-84 so pins sit correctly on OpenStreetMap / Carto tiles.
+
 ### With a Google Maps API key
 
 > **Admin:** The Google Maps API key is instance-wide, set in **Admin → Settings → API Keys**. It is stored encrypted at rest and used for every member of the instance; on managed instances the operator supplies it and the panel is hidden.
@@ -23,9 +27,9 @@ When a key is present, the autocomplete uses the Google Places API, which can re
 
 > **API key restrictions:** TREK calls the Google Places API from the server, not the browser. If you apply **HTTP referrers** restrictions to your key in Google Cloud Console, you must also set `APP_URL` in your environment — TREK sends it as the `Referer` header on every outbound Google API request. Without it, Google will reject all server-side calls with `REQUEST_DENIED`. For server-side deployments, **IP address** restrictions are simpler and require no extra configuration. See [Troubleshooting](Troubleshooting) if photos are missing after adding a key.
 
-### Without a Google Maps API key
+### Without a Google Maps or Amap API key
 
-TREK falls back to OpenStreetMap (Nominatim) automatically — no API key needed. A notice appears above the search box — *Using OpenStreetMap. A Google API key adds ratings and opening hours.* Results include name, address, and coordinates.
+TREK falls back to OpenStreetMap (Nominatim) automatically — no API key needed. A notice appears above the search box — *Using OpenStreetMap. A Google API key adds ratings and opening hours.* Results include name, address, and coordinates. From networks that cannot reach `nominatim.openstreetmap.org` (common in mainland China), configure an Amap key instead.
 
 ## Place details while searching
 

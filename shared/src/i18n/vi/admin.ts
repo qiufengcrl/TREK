@@ -134,6 +134,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Cần thiết cho tìm kiếm địa điểm. Truy cập tại console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Nếu không có khóa API, OpenStreetMap sẽ được sử dụng để tìm kiếm địa điểm. Với khóa Google API, bạn cũng có thể tải ảnh, xếp hạng và giờ mở cửa. Nhận một cái tại console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Khuyến khích',
   'admin.weatherKey': 'OpenWeatherMap API Key',
   'admin.weatherKeyHint': 'Đối với dữ liệu thời tiết. Miễn phí tại openweathermap.org',

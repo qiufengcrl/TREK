@@ -125,6 +125,18 @@ describe('instance API keys', () => {
     expect(resolveApiKey(db, 'maps_api_key', 0, undefined)).toEqual({ key: 'instance-key', source: 'instance' });
   });
 
+  it('INSTKEY-010: amap_api_key has no user column and still resolves from the instance row', () => {
+    writeInstanceApiKey(db, 'amap_api_key', 'amap-instance-key');
+    expect(resolveApiKey(db, 'amap_api_key', 1, undefined)).toEqual({
+      key: 'amap-instance-key',
+      source: 'instance',
+    });
+    expect(resolveApiKey(db, 'amap_api_key', 1, 'env-amap')).toEqual({
+      key: 'env-amap',
+      source: 'operator-env',
+    });
+  });
+
   it('INSTKEY-008: an empty instance value does not fall through to the own row', () => {
     const { user } = createAdmin(testDb);
     testDb.prepare('UPDATE users SET unsplash_api_key = ? WHERE id = ?').run('stale-personal', user.id);

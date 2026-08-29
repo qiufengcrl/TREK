@@ -195,6 +195,7 @@ describe('validateKeys', () => {
     expect(result.error).toMatch(/admin/i);
     expect(result.maps).toBe(false);
     expect(result.weather).toBe(false);
+    expect(result.amap).toBe(false);
   });
 
   it('AUTH-DB-016: returns { maps: false, weather: false } when no API keys are stored', async () => {
@@ -202,6 +203,7 @@ describe('validateKeys', () => {
     const result = await profile.validateKeys(user.id);
     expect(result.maps).toBe(false);
     expect(result.weather).toBe(false);
+    expect(result.amap).toBe(false);
     expect(result.maps_details).toBeNull();
   });
 
@@ -394,6 +396,14 @@ describe('instance-wide API keys', () => {
     // The column stays in step so clearing the field clears both.
     const row = testDb.prepare('SELECT maps_api_key FROM users WHERE id = ?').get(user.id) as { maps_api_key: string };
     expect(row.maps_api_key).toBe('instance-google-key');
+  });
+
+  it('AUTH-DB-102b: an admin Amap key lands only in app_settings', () => {
+    const { user } = createAdmin(testDb);
+    const result = profile.updateApiKeys(user.id, { amap_api_key: 'amap-web-key' });
+    expect(result.changedKeys).toEqual(['amap_api_key']);
+    expect(instanceRow('amap_api_key')).toBe('amap-web-key');
+    expect(profile.getSettings(user.id).settings?.amap_api_key).toBe('amap-web-key');
   });
 
   it('AUTH-DB-103: a non-admin save never touches the instance value', () => {

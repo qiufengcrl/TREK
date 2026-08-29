@@ -1191,6 +1191,27 @@ describe('searchPlaces (fetch stubbed)', () => {
     expect(Array.isArray(result.places)).toBe(true);
   });
 
+  it('MAPS-038a: uses Amap when an instance Amap key is set, even if a Google key exists', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    mockDbGet.mockReturnValue({ maps_api_key: 'google-key' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [{ id: 'B000', name: '故宫', address: '北京', location: '116.39747,39.908823' }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await svc.searchPlaces(1, '故宫');
+    expect(result.source).toBe('amap');
+    expect((result.places[0] as { name: string }).name).toBe('故宫');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('places.googleapis.com');
+  });
+
   // Session tokens: the keystrokes of one search and the details lookup that
   // ends it must reach Google under the same token, or every request is billed
   // on its own. The body field and the query parameter are what Google's
@@ -1261,7 +1282,9 @@ describe('searchPlaces (fetch stubbed)', () => {
   });
 
   it('MAPS-039h: a Google rejection logs which credential was used, never the credential (#1939)', async () => {
-    mockInstanceGet.mockReturnValueOnce({ value: 'instance-secret-key' });
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'maps_api_key' ? { value: 'instance-secret-key' } : undefined,
+    );
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -2307,6 +2330,7 @@ describe('isGooglePlaceId', () => {
     expect(isGooglePlaceId('node:5255005321')).toBe(false);
     expect(isGooglePlaceId('way:84527326')).toBe(false);
     expect(isGooglePlaceId('relation:345407')).toBe(false);
+    expect(isGooglePlaceId('amap:B000A83M61')).toBe(false);
     expect(isGooglePlaceId('https://lh3.googleusercontent.com/photo.jpg')).toBe(false);
     // The collection views send the bare coordinate pair when a place has no ids.
     expect(isGooglePlaceId('36.7617499,-3.8448432')).toBe(false);

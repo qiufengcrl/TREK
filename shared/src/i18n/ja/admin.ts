@@ -126,6 +126,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': '場所検索に必要。console.cloud.google.com で取得',
   'admin.mapsKeyHintLong':
     'APIキーなしではOpenStreetMapを使用します。Google APIキーがあれば写真、評価、営業時間も表示できます。',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': '推奨',
   'admin.weatherKey': 'OpenWeatherMap APIキー',
   'admin.weatherKeyHint': '天気データ用。openweathermap.org で無料',

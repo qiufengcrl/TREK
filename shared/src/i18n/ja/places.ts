@@ -85,6 +85,7 @@ const places: TranslationStrings = {
   'places.osmHint':
     'OpenStreetMapで検索しています（写真・営業時間・評価なし）。設定でGoogle APIキーを追加すると詳細が表示されます。',
   'places.osmActive': 'OpenStreetMapを使用中。Google APIキーで評価と営業時間が追加されます。',
+  'places.amapActive': 'Using Amap (Gaode) for place search.',
   'places.details.title': '場所の詳細',
   'places.details.empty': '検索結果を選ぶと写真と説明が表示されます。',
   'places.details.loading': '詳細を読み込み中...',

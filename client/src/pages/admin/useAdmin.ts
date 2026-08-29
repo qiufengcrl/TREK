@@ -149,6 +149,7 @@ export function useAdmin() {
   const [mapsKey, setMapsKey] = useState<string>('')
   const [weatherKey, setWeatherKey] = useState<string>('')
   const [unsplashKey, setUnsplashKey] = useState<string>('')
+  const [amapKey, setAmapKey] = useState<string>('')
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({})
   const [savingKeys, setSavingKeys] = useState<boolean>(false)
   const [validating, setValidating] = useState<Record<string, boolean>>({})
@@ -226,6 +227,7 @@ export function useAdmin() {
       setMapsKey(data.settings?.maps_api_key || '')
       setWeatherKey(data.settings?.openweather_api_key || '')
       setUnsplashKey(data.settings?.unsplash_api_key || '')
+      setAmapKey(data.settings?.amap_api_key || '')
     } catch (err: unknown) {
       // ignore
     }
@@ -281,6 +283,7 @@ export function useAdmin() {
         maps_api_key: mapsKey,
         openweather_api_key: weatherKey,
         unsplash_api_key: unsplashKey,
+        amap_api_key: amapKey,
       })
       toast.success(t('admin.keySaved'))
     } catch (err: unknown) {
@@ -294,7 +297,7 @@ export function useAdmin() {
     setValidating({ maps: true, weather: true })
     try {
       // Save first so validation uses the current values
-      await updateApiKeys({ maps_api_key: mapsKey, openweather_api_key: weatherKey, unsplash_api_key: unsplashKey })
+      await updateApiKeys({ maps_api_key: mapsKey, openweather_api_key: weatherKey, unsplash_api_key: unsplashKey, amap_api_key: amapKey })
       const result = await authApi.validateKeys()
       setValidation(result)
     } catch (err: unknown) {
@@ -308,7 +311,7 @@ export function useAdmin() {
     setValidating(prev => ({ ...prev, [keyType]: true }))
     try {
       // Save first so validation uses the current values
-      await updateApiKeys({ maps_api_key: mapsKey, openweather_api_key: weatherKey, unsplash_api_key: unsplashKey })
+      await updateApiKeys({ maps_api_key: mapsKey, openweather_api_key: weatherKey, unsplash_api_key: unsplashKey, amap_api_key: amapKey })
       const result = await authApi.validateKeys()
       setValidation(prev => ({ ...prev, [keyType]: result[keyType] }))
     } catch (err: unknown) {
@@ -441,7 +444,7 @@ export function useAdmin() {
     invites, setInvites, inviteTrips, showCreateInvite, setShowCreateInvite, inviteForm, setInviteForm,
     allowedFileTypes, setAllowedFileTypes, savingFileTypes, setSavingFileTypes,
     smtpValues, setSmtpValues, smtpLoaded,
-    mapsKey, setMapsKey, weatherKey, setWeatherKey, unsplashKey, setUnsplashKey,
+    mapsKey, setMapsKey, weatherKey, setWeatherKey, unsplashKey, setUnsplashKey, amapKey, setAmapKey,
     showKeys, setShowKeys, savingKeys, validating, validation,
     updateInfo, setUpdateInfo, showUpdateModal, setShowUpdateModal,
     showRotateJwtModal, setShowRotateJwtModal, rotatingJwt, setRotatingJwt,

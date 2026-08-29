@@ -91,6 +91,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Necessária para busca de lugares. Obtenha em console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Sem chave de API, o OpenStreetMap é usado na busca. Com uma chave Google, também podem ser carregadas fotos, avaliações e horários. Obtenha em console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Recomendado',
   'admin.weatherKey': 'Chave OpenWeatherMap',
   'admin.weatherKeyHint': 'Para dados meteorológicos. Grátis em openweathermap.org',

@@ -130,6 +130,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': '用於地點搜尋。在 console.cloud.google.com 獲取',
   'admin.mapsKeyHintLong':
     '沒有 API 金鑰時，使用 OpenStreetMap 搜尋地點。有了 Google API 金鑰，還可以載入照片、評分和營業時間。在 console.cloud.google.com 獲取。',
+  'admin.amapKey': '高德地圖 Web 服務金鑰',
+  'admin.amapKeyHint': '用於國內地點搜尋。在 console.amap.com 申請',
+  'admin.amapKeyHintLong':
+    '填寫後優先用高德搜尋地點，不再走 Google 或 OpenStreetMap。請在 console.amap.com 建立「Web 服務」類型 Key。座標會轉換成 WGS-84，以便釘在 OSM 底圖上。',
   'admin.recommended': '推薦',
   'admin.weatherKey': 'OpenWeatherMap API 金鑰',
   'admin.weatherKeyHint': '用於天氣資料。在 openweathermap.org 免費獲取',

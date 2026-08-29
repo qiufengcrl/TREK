@@ -112,7 +112,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
   const placesSessionRef = useRef(new PlacesSession())
   const toast = useToast()
   const { t, language, locale } = useTranslation()
-  const { hasMapsKey, placesEnrichEnabled } = useAuthStore()
+  const { hasMapsKey, hasAmapKey, placesEnrichEnabled } = useAuthStore()
   const can = useCanDo()
   const timeFormat = useSettingsStore((s) => s.settings.time_format) || '24h'
   const tripObj = useTripStore((s) => s.trip)
@@ -324,7 +324,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     const lng = Number(result.lng)
     if (Number.isFinite(lat) && Number.isFinite(lng)) {
       setDetailsSelection({
-        placeId: result.google_place_id || result.osm_id || undefined,
+        placeId: result.google_place_id || result.osm_id || result.amap_id || undefined,
         lat,
         lng,
         name: result.name || '',
@@ -544,6 +544,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     locale,
     timeFormat,
     hasMapsKey,
+    hasAmapKey,
     placesEnrichEnabled,
     can,
     tripObj,
@@ -614,6 +615,7 @@ export default function PlaceFormModal(props: PlaceFormModalProps) {
     t,
     language,
     hasMapsKey,
+    hasAmapKey,
     placesEnrichEnabled,
     can,
     tripObj,
@@ -694,11 +696,15 @@ export default function PlaceFormModal(props: PlaceFormModalProps) {
       <form onSubmit={handleSubmit} className={twoColumn || showDetails ? 'flex-1 min-w-0 space-y-3' : 'space-y-3'} onPaste={handlePaste}>
         {/* Place Search */}
         <div className="bg-surface-secondary rounded-xl p-3 border border-edge">
-          {!hasMapsKey && (
+          {hasAmapKey ? (
+            <p className="mb-2 text-xs text-content-faint">
+              {t('places.amapActive')}
+            </p>
+          ) : !hasMapsKey ? (
             <p className="mb-2 text-xs text-content-faint">
               {t('places.osmActive')}
             </p>
-          )}
+          ) : null}
           <div className="relative">
             <div className="flex gap-2">
               <input
