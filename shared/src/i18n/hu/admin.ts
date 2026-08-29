@@ -92,6 +92,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Helykereséshez szükséges. Létrehozás: console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'API kulcs nélkül az OpenStreetMap szolgál helykeresésre. Google API kulccsal képek, értékelések és nyitvatartás is betölthetők. Létrehozás: console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Ajánlott',
   'admin.weatherKey': 'OpenWeatherMap API kulcs',
   'admin.weatherKeyHint': 'Időjárás adatokhoz. Ingyenes: openweathermap.org',

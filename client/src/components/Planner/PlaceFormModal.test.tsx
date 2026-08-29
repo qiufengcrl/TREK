@@ -355,6 +355,13 @@ describe('PlaceFormModal', () => {
     expect(screen.getByText(/OpenStreetMap/i)).toBeInTheDocument();
   });
 
+  it('FE-PLANNER-PLACEFORM-022a: hasAmapKey shows the Amap active message', () => {
+    seedStore(useAuthStore, { user: buildUser(), isAuthenticated: true, hasMapsKey: false, hasAmapKey: true });
+    render(<PlaceFormModal {...defaultProps} />);
+    expect(screen.getByText(/Using Amap \(Gaode\) for place search/i)).toBeInTheDocument();
+    expect(screen.queryByText(/OpenStreetMap/i)).not.toBeInTheDocument();
+  });
+
   // ── Category ─────────────────────────────────────────────────────────────────
 
   it('FE-PLANNER-PLACEFORM-023: category selector renders options', () => {

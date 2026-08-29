@@ -113,6 +113,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'مطلوب للبحث عن الأماكن. احصل عليه من console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'بدون مفتاح API، يُستخدم OpenStreetMap للبحث. مع مفتاح Google يمكن تحميل الصور والتقييمات وساعات العمل أيضًا. احصل عليه من console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'مُوصى به',
   'admin.weatherKey': 'مفتاح OpenWeatherMap API',
   'admin.weatherKeyHint': 'لبيانات الطقس. مجاني من openweathermap.org',

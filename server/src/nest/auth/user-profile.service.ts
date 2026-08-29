@@ -14,6 +14,7 @@ import {
   type InstanceApiKeyName,
 } from '../settings/instance-api-keys';
 import { SEARCH_TEXT_FIELD_MASK } from '../maps/maps.helpers';
+import { probeAmapKey } from '../geo/amap.client';
 import { User } from '../../types';
 
 /**
@@ -96,9 +97,15 @@ export class UserProfileService {
     skipped: string[] = [],
   ): string[] {
     const norm = (v: unknown) => String(v ?? '').trim();
-    return (['maps_api_key', 'openweather_api_key', 'unsplash_api_key'] as const).filter(
+    const fromColumns = (['maps_api_key', 'openweather_api_key', 'unsplash_api_key'] as const).filter(
       (name) => body[name] !== undefined && !skipped.includes(name) && norm(body[name]) !== norm(this.storedKeyPlaintext(name, current, isAdmin))
     );
+    const amapChanged =
+      body.amap_api_key !== undefined &&
+      !skipped.includes('amap_api_key') &&
+      isAdmin &&
+      norm(body.amap_api_key) !== norm(readInstanceApiKey(this.db, 'amap_api_key') ?? '');
+    return amapChanged ? [...fromColumns, 'amap_api_key'] : [...fromColumns];
   }
 
   /**
@@ -135,8 +142,12 @@ export class UserProfileService {
   }
 
   updateApiKeys(userId: number, rawBody: unknown) {
-    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string };
+    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string; amap_api_key?: string };
     const { blocked } = splitManagedKeys(body, this.managed);
+    if (this.managed && body.amap_api_key !== undefined) {
+      delete body.amap_api_key;
+      blocked.push('amap_api_key');
+    }
     for (const key of blocked) delete body[key as keyof typeof body];
     const current = this.currentKeys(userId);
     const isAdmin = current?.role === 'admin';
@@ -173,7 +184,7 @@ export class UserProfileService {
     userId: number,
     rawBody: unknown
   ): { error?: string; status?: number; success?: boolean; user?: Record<string, unknown>; changedKeys?: string[] } {
-    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string; username?: string; email?: string };
+    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string; amap_api_key?: string; username?: string; email?: string };
     const { maps_api_key, openweather_api_key, unsplash_api_key, username, email } = body;
 
     if (username !== undefined) {
@@ -203,6 +214,10 @@ export class UserProfileService {
     // The name and email half of this body stays the user's own in every mode;
     // only the three key columns answer to the operator.
     const { blocked } = splitManagedKeys(body, this.managed);
+    if (this.managed && body.amap_api_key !== undefined) {
+      delete body.amap_api_key;
+      blocked.push('amap_api_key');
+    }
     const keyLocked = blocked.length > 0;
 
     if (maps_api_key !== undefined && !keyLocked) { updates.push('maps_api_key = ?'); params.push(maybe_encrypt_api_key(maps_api_key)); }
@@ -258,7 +273,8 @@ export class UserProfileService {
           maps_api_key: null,
           openweather_api_key: null,
           unsplash_api_key: null,
-          managed_keys: [...MANAGED_LOCKED_PROFILE_KEYS],
+          amap_api_key: null,
+          managed_keys: [...MANAGED_LOCKED_PROFILE_KEYS, 'amap_api_key'],
         },
       };
     }
@@ -272,6 +288,7 @@ export class UserProfileService {
         maps_api_key: readInstanceApiKey(this.db, 'maps_api_key') ?? decrypt_api_key(user.maps_api_key),
         openweather_api_key: decrypt_api_key(user.openweather_api_key),
         unsplash_api_key: readInstanceApiKey(this.db, 'unsplash_api_key') ?? decrypt_api_key(user.unsplash_api_key),
+        amap_api_key: readInstanceApiKey(this.db, 'amap_api_key'),
       },
     };
   }
@@ -325,13 +342,14 @@ export class UserProfileService {
   // Key validation
   // -------------------------------------------------------------------------
 
-  async validateKeys(userId: number): Promise<{ error?: string; status?: number; maps: boolean; weather: boolean; maps_details: null | { ok: boolean; status: number | null; status_text: string | null; error_message: string | null; error_status: string | null; error_raw: string | null } }> {
+  async validateKeys(userId: number): Promise<{ error?: string; status?: number; maps: boolean; weather: boolean; amap: boolean; maps_details: null | { ok: boolean; status: number | null; status_text: string | null; error_message: string | null; error_status: string | null; error_raw: string | null } }> {
     const user = this.db.get<Pick<User, 'role' | 'openweather_api_key'>>('SELECT role, openweather_api_key FROM users WHERE id = ?', userId);
-    if (user?.role !== 'admin') return { error: 'Admin access required', status: 403, maps: false, weather: false, maps_details: null };
+    if (user?.role !== 'admin') return { error: 'Admin access required', status: 403, maps: false, weather: false, amap: false, maps_details: null };
 
     const result: {
       maps: boolean;
       weather: boolean;
+      amap: boolean;
       maps_details: null | {
         ok: boolean;
         status: number | null;
@@ -340,7 +358,7 @@ export class UserProfileService {
         error_status: string | null;
         error_raw: string | null;
       };
-    } = { maps: false, weather: false, maps_details: null };
+    } = { maps: false, weather: false, amap: false, maps_details: null };
 
     // The key a search would actually use, not the one in this admin's column:
     // testing a value nothing resolves to is how "the panel says the key is
@@ -406,6 +424,11 @@ export class UserProfileService {
       } catch {
         result.weather = false;
       }
+    }
+
+    const { key: amap_api_key } = resolveApiKey(this.db, 'amap_api_key', userId, readEnv().maps.amapApiKey);
+    if (amap_api_key) {
+      result.amap = await probeAmapKey(amap_api_key);
     }
 
     return result;

@@ -4,7 +4,7 @@ import { decrypt_api_key, maybe_encrypt_api_key } from '../common/crypto/apiKeyC
 /**
  * The third-party keys that belong to the instance rather than to a person.
  *
- * Google Places and Unsplash bill the install, not the account that pasted the
+ * Google Places, Amap and Unsplash bill the install, not the account that pasted the
  * key in, so the value is instance configuration — the same argument #1772 made
  * for the LLM endpoint (see llm-parse/llm-config.ts: instance-wide, admin-set,
  * wins; per-user as the fallback). Both keys used to be resolved out of the
@@ -17,10 +17,10 @@ import { decrypt_api_key, maybe_encrypt_api_key } from '../common/crypto/apiKeyC
  * apiKeyCrypto, so the format matches what the users columns already hold and
  * a legacy plaintext value still reads back.
  */
-export type InstanceApiKeyName = 'maps_api_key' | 'unsplash_api_key';
+export type InstanceApiKeyName = 'maps_api_key' | 'unsplash_api_key' | 'amap_api_key';
 
 /** Instance names whose per-user column is still honoured as a last resort. */
-export const INSTANCE_API_KEY_NAMES: readonly InstanceApiKeyName[] = ['maps_api_key', 'unsplash_api_key'];
+export const INSTANCE_API_KEY_NAMES: readonly InstanceApiKeyName[] = ['maps_api_key', 'unsplash_api_key', 'amap_api_key'];
 
 /**
  * Where a resolved key came from. Logged beside a provider error so "works for
@@ -32,7 +32,7 @@ export type ApiKeySource = 'operator-env' | 'instance' | 'user-row';
 // Full statements rather than an interpolated column: the name doubles as the
 // users column AND the app_settings key, and identifiers only ever come from a
 // literal allow-list.
-const USER_ROW_SQL: Record<InstanceApiKeyName, string> = {
+const USER_ROW_SQL: Partial<Record<InstanceApiKeyName, string>> = {
   maps_api_key: 'SELECT maps_api_key FROM users WHERE id = ?',
   unsplash_api_key: 'SELECT unsplash_api_key FROM users WHERE id = ?',
 };
@@ -83,7 +83,10 @@ export function resolveApiKey(
   if (instance) return { key: instance, source: 'instance' };
   if (!userId) return { key: null, source: null };
 
-  const row = db.get<Record<string, string | null>>(USER_ROW_SQL[name], userId);
+  const sql = USER_ROW_SQL[name];
+  if (!sql) return { key: null, source: null };
+
+  const row = db.get<Record<string, string | null>>(sql, userId);
   const own = decrypt_api_key(row?.[name]) || null;
   return own ? { key: own, source: 'user-row' } : { key: null, source: null };
 }

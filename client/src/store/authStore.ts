@@ -45,6 +45,7 @@ interface AuthState {
   isPrerelease: boolean
   appVersion: string
   hasMapsKey: boolean
+  hasAmapKey: boolean
   serverTimezone: string
   /** Server policy: all users must enable MFA */
   appRequireMfa: boolean
@@ -71,6 +72,7 @@ interface AuthState {
   setIsPrerelease: (val: boolean) => void
   setAppVersion: (val: string) => void
   setHasMapsKey: (val: boolean) => void
+  setHasAmapKey: (val: boolean) => void
   setServerTimezone: (tz: string) => void
   setAppRequireMfa: (val: boolean) => void
   setTripRemindersEnabled: (val: boolean) => void
@@ -116,6 +118,7 @@ export const useAuthStore = create<AuthState>()(
   isPrerelease: false,
   appVersion: '',
   hasMapsKey: false,
+  hasAmapKey: false,
   serverTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   appRequireMfa: false,
   tripRemindersEnabled: false,
@@ -308,6 +311,9 @@ export const useAuthStore = create<AuthState>()(
       if ('maps_api_key' in keys) {
         set({ hasMapsKey: !!keys.maps_api_key })
       }
+      if ('amap_api_key' in keys) {
+        set({ hasAmapKey: !!keys.amap_api_key })
+      }
     } catch (err: unknown) {
       throw new Error(getApiErrorMessage(err, 'Error saving API keys'))
     }
@@ -351,6 +357,7 @@ export const useAuthStore = create<AuthState>()(
   setIsPrerelease: (val: boolean) => set({ isPrerelease: val }),
   setAppVersion: (val: string) => set({ appVersion: val }),
   setHasMapsKey: (val: boolean) => set({ hasMapsKey: val }),
+  setHasAmapKey: (val: boolean) => set({ hasAmapKey: val }),
   setServerTimezone: (tz: string) => set({ serverTimezone: tz }),
   setAppRequireMfa: (val: boolean) => set({ appRequireMfa: val }),
   setTripRemindersEnabled: (val: boolean) => set({ tripRemindersEnabled: val }),

@@ -85,6 +85,7 @@ const places: TranslationStrings = {
   'places.osmHint':
     'Пошук через OpenStreetMap (без фото, годин роботи та рейтингів). Додайте API-ключ Google у налаштуваннях для повної інформації.',
   'places.osmActive': 'Використовується OpenStreetMap. Ключ Google API додасть рейтинги та години роботи.',
+  'places.amapActive': 'Using Amap (Gaode) for place search.',
   'places.details.title': 'Відомості про місце',
   'places.details.empty': 'Виберіть результат пошуку, щоб побачити зображення та опис.',
   'places.details.loading': 'Завантаження відомостей...',

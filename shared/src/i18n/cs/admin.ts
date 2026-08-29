@@ -91,6 +91,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Povinné pro hledání míst. Získáte na console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Bez API klíče se pro hledání používá OpenStreetMap. S Google klíčem lze načítat fotky, hodnocení a otevírací dobu.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Doporučeno',
   'admin.weatherKey': 'OpenWeatherMap API klíč',
   'admin.weatherKeyHint': 'Pro data o počasí. Zdarma na openweathermap.org',

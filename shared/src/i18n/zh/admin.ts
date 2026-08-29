@@ -91,6 +91,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': '用于地点搜索。在 console.cloud.google.com 获取',
   'admin.mapsKeyHintLong':
     '没有 API 密钥时，使用 OpenStreetMap 搜索地点。有了 Google API 密钥，还可以加载照片、评分和营业时间。在 console.cloud.google.com 获取。',
+  'admin.amapKey': '高德地图 Web 服务密钥',
+  'admin.amapKeyHint': '用于国内地点搜索。在 console.amap.com 申请',
+  'admin.amapKeyHintLong':
+    '填写后优先用高德搜索地点，不再走 Google 或 OpenStreetMap。请在 console.amap.com 创建「Web 服务」类型 Key。坐标会转换成 WGS-84，以便钉在 OSM 底图上。',
   'admin.recommended': '推荐',
   'admin.weatherKey': 'OpenWeatherMap API 密钥',
   'admin.weatherKeyHint': '用于天气数据。在 openweathermap.org 免费获取',

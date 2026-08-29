@@ -28,7 +28,7 @@ export default function AdminSettingsTab({ admin, t }: AdminSettingsTabProps): R
     passkeyLogin, setPasskeyLogin, passkeyConfigured,
     webauthnRpId, setWebauthnRpId, webauthnOrigins, setWebauthnOrigins, savingWebauthn, handleSaveWebauthn,
     allowedFileTypes, setAllowedFileTypes, savingFileTypes, setSavingFileTypes,
-    mapsKey, setMapsKey, unsplashKey, setUnsplashKey, showKeys, savingKeys, validating, validation,
+    mapsKey, setMapsKey, unsplashKey, setUnsplashKey, amapKey, setAmapKey, showKeys, savingKeys, validating, validation,
     managed,
     setShowRotateJwtModal,
     handleToggleAuthSetting, handleToggleRequireMfa,
@@ -270,6 +270,59 @@ export default function AdminSettingsTab({ admin, t }: AdminSettingsTabProps): R
               administered install the operator supplies the keys, while whether
               photos and lookups are offered at all stays the admin’s call. */}
           {!managed && (<>
+          {/* Amap Key — domestic search; used first when present */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1.5">
+              {t('admin.amapKey')}
+              <span className="text-[9px] font-medium px-1.5 py-px rounded-full bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200">{t('admin.recommended')}</span>
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type={showKeys.amap ? 'text' : 'password'}
+                  value={amapKey}
+                  onChange={e => setAmapKey(e.target.value)}
+                  placeholder={t('settings.keyPlaceholder')}
+                  className="w-full pr-10 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleKey('amap')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showKeys.amap ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <button type="button"
+                onClick={() => handleValidateKey('amap')}
+                disabled={!amapKey || validating.amap}
+                className="px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {validating.amap ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : validation.amap === true ? (
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                ) : validation.amap === false ? (
+                  <XCircle className="w-4 h-4 text-red-500" />
+                ) : null}
+                {t('admin.validateKey')}
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">{t('admin.amapKeyHintLong')}</p>
+            {validation.amap === true && (
+              <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full inline-block"></span>
+                {t('admin.keyValid')}
+              </p>
+            )}
+            {validation.amap === false && (
+              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
+                {t('admin.keyInvalid')}
+              </p>
+            )}
+          </div>
+
           {/* Google Maps Key */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1.5">

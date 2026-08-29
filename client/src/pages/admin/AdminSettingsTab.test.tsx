@@ -29,6 +29,19 @@ function card(heading: string | RegExp): HTMLElement {
   return screen.getByRole('heading', { name: heading }).closest<HTMLElement>('.rounded-xl')!;
 }
 
+/** The field wrapper that starts at an API-key label (Amap / Google / Unsplash). */
+function apiKeyBlock(label: string): HTMLElement {
+  return screen.getByText(label).closest('div')!;
+}
+
+function apiKeyInput(label: string): HTMLElement {
+  return within(apiKeyBlock(label)).getByPlaceholderText('Enter key...');
+}
+
+function apiKeyTestButton(label: string): HTMLElement {
+  return within(apiKeyBlock(label)).getByRole('button', { name: /^test$/i });
+}
+
 /** The toggle button in the row belonging to a label paragraph. */
 function toggleFor(label: string): HTMLElement {
   const row = screen.getAllByText(label).map(el => el.closest<HTMLElement>('.flex.items-center.justify-between'));
@@ -243,7 +256,7 @@ describe('AdminSettingsTab', () => {
   it('FE-ADMSET-020: maps key input and its visibility toggle', () => {
     const admin = renderTab({ mapsKey: 'abc' });
 
-    const mapsInput = within(card('API Keys')).getAllByPlaceholderText('Enter key...')[0];
+    const mapsInput = apiKeyInput('Google Maps API Key');
     expect(mapsInput).toHaveAttribute('type', 'password');
 
     fireEvent.change(mapsInput, { target: { value: 'abcd' } });
@@ -256,15 +269,15 @@ describe('AdminSettingsTab', () => {
   it('FE-ADMSET-021: showKeys switches both key inputs to plain text', () => {
     renderTab({ showKeys: { maps: true, unsplash: true } });
 
-    const inputs = within(card('API Keys')).getAllByPlaceholderText('Enter key...');
-    expect(inputs[0]).toHaveAttribute('type', 'text');
-    expect(inputs[1]).toHaveAttribute('type', 'text');
+    expect(apiKeyInput('Google Maps API Key')).toHaveAttribute('type', 'text');
+    expect(apiKeyInput('Unsplash API Key')).toHaveAttribute('type', 'text');
+    expect(apiKeyInput('Amap (Gaode) Web API Key')).toHaveAttribute('type', 'password');
   });
 
   it('FE-ADMSET-022: unsplash key input and its visibility toggle', () => {
     const admin = renderTab({ unsplashKey: '' });
 
-    const unsplashInput = within(card('API Keys')).getAllByPlaceholderText('Enter key...')[1];
+    const unsplashInput = apiKeyInput('Unsplash API Key');
     fireEvent.change(unsplashInput, { target: { value: 'unsplash-key' } });
     expect(admin.setUnsplashKey).toHaveBeenCalledWith('unsplash-key');
 
@@ -275,13 +288,13 @@ describe('AdminSettingsTab', () => {
   it('FE-ADMSET-023: the maps Test button is disabled without a key', () => {
     renderTab({ mapsKey: '' });
 
-    expect(within(card('API Keys')).getByRole('button', { name: /^test$/i })).toBeDisabled();
+    expect(apiKeyTestButton('Google Maps API Key')).toBeDisabled();
   });
 
   it('FE-ADMSET-024: the maps Test button validates the maps key', () => {
     const admin = renderTab({ mapsKey: 'AIza-test' });
 
-    fireEvent.click(within(card('API Keys')).getByRole('button', { name: /^test$/i }));
+    fireEvent.click(apiKeyTestButton('Google Maps API Key'));
 
     expect(admin.handleValidateKey).toHaveBeenCalledWith('maps');
   });
@@ -289,9 +302,30 @@ describe('AdminSettingsTab', () => {
   it('FE-ADMSET-025: shows a spinner while the maps key is validating', () => {
     renderTab({ mapsKey: 'k', validating: { maps: true } });
 
-    const testBtn = within(card('API Keys')).getByRole('button', { name: /^test$/i });
+    const testBtn = apiKeyTestButton('Google Maps API Key');
     expect(testBtn).toBeDisabled();
     expect(testBtn.querySelector('svg.animate-spin')).toBeInTheDocument();
+  });
+
+  it('FE-ADMSET-025a: amap key input and its visibility toggle', () => {
+    const admin = renderTab({ amapKey: 'amap-secret' });
+
+    const amapInput = apiKeyInput('Amap (Gaode) Web API Key');
+    expect(amapInput).toHaveAttribute('type', 'password');
+
+    fireEvent.change(amapInput, { target: { value: 'amap-next' } });
+    expect(admin.setAmapKey).toHaveBeenCalledWith('amap-next');
+
+    fireEvent.click(amapInput.parentElement!.querySelector('button')!);
+    expect(admin.toggleKey).toHaveBeenCalledWith('amap');
+  });
+
+  it('FE-ADMSET-025b: the amap Test button validates the amap key', () => {
+    const admin = renderTab({ amapKey: 'amap-secret' });
+
+    fireEvent.click(apiKeyTestButton('Amap (Gaode) Web API Key'));
+
+    expect(admin.handleValidateKey).toHaveBeenCalledWith('amap');
   });
 
   it('FE-ADMSET-026: renders the validation result for the maps key', () => {

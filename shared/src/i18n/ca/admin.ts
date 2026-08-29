@@ -98,6 +98,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Obligatòria per cercar llocs. Aconsegueix-la a console.cloud.google.com',
   'admin.mapsKeyHintLong':
     "Sense una clau API, la cerca de llocs fa servir OpenStreetMap. Amb una clau de Google també es poden carregar fotos, valoracions i horaris d'obertura. Aconsegueix-la a console.cloud.google.com.",
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Recomanat',
   'admin.weatherKey': "Clau API d'OpenWeatherMap",
   'admin.weatherKeyHint': 'Per a dades meteorològiques. Gratuït a openweathermap.org',

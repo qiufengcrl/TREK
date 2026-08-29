@@ -253,6 +253,7 @@ export interface AppConfig {
   oidc_display_name?: string
   oidc_only_mode?: boolean
   has_maps_key?: boolean
+  has_amap_key?: boolean
   allowed_file_types?: string
   timezone?: string
   /** When true, users without MFA cannot use the app until they enable it */

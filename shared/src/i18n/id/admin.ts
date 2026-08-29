@@ -134,6 +134,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Diperlukan untuk pencarian tempat. Dapatkan di console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Tanpa kunci API, OpenStreetMap digunakan untuk pencarian tempat. Dengan kunci API Google, foto, rating, dan jam buka juga bisa dimuat. Dapatkan di console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK searches places through Amap instead of Google or OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Direkomendasikan',
   'admin.weatherKey': 'Kunci API OpenWeatherMap',
   'admin.weatherKeyHint': 'Untuk data cuaca. Gratis di openweathermap.org',
