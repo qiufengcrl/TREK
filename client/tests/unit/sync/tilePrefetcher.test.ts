@@ -24,6 +24,7 @@ import {
 import { offlineDb, clearAll, upsertSyncMeta } from '../../../src/db/offlineDb';
 import { setAuthed } from '../../../src/sync/authGate';
 import { buildPlace } from '../../helpers/factories';
+import { tiandituLabelUrl } from '../../../src/utils/tileUrl';
 
 beforeEach(async () => {
   await clearAll();
@@ -170,6 +171,25 @@ describe('buildTileUrl', () => {
     const tmpl = 'https://tiles.example.com/{z}/{x}/{y}{r}.png';
     const url = buildTileUrl(tmpl, 10, 0, 0);
     expect(url).toBe('https://tiles.example.com/10/0/0.png');
+  });
+
+  it('appends a Tianditu tk and shards 0–7 the way Leaflet does', () => {
+    const tmpl = 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}';
+    const url = buildTileUrl(tmpl, 10, 500, 300, undefined, 'tk-1');
+    expect(url).toContain('tk=tk-1');
+    expect(url).toMatch(/^https:\/\/t[0-7]\.tianditu\.gov\.cn\//);
+    const leaflet = '01234567';
+    const expected = leaflet[Math.abs(500 + 300) % leaflet.length];
+    expect(url).toContain(`t${expected}.tianditu.gov.cn`);
+  });
+
+  it('builds the annotation layer URL from a vec_w template', () => {
+    const tmpl = 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}';
+    const labels = tiandituLabelUrl(tmpl);
+    expect(labels).toContain('T=cva_w');
+    const url = buildTileUrl(labels!, 10, 500, 300, undefined, 'tk-1');
+    expect(url).toContain('T=cva_w');
+    expect(url).toContain('tk=tk-1');
   });
 });
 

@@ -1,3 +1,7 @@
+import { isAmapShareUrl } from '@trek/shared'
+
+export { isAmapShareUrl }
+
 export interface PlaceFormData {
   name: string
   description: string
@@ -19,6 +23,23 @@ export interface PlaceFormData {
   // DEFAULT_FORM on purpose: the mobile sheet shares this type and never sets
   // it, and places.service already writes image_url through on create/update.
   image_url?: string
+}
+
+export function isShareMapUrl(input: string): boolean {
+  return isGoogleMapsUrl(input) || isAmapShareUrl(input)
+}
+
+/** 分享卡片经常是「名称 + 地址 + 链接」。抽出第一条可解析的地图 URL。 */
+export function extractShareMapUrl(input: string): string | null {
+  const trimmed = input.trim()
+  if (!trimmed) return null
+  if (isShareMapUrl(trimmed)) return trimmed
+  const matches = trimmed.match(/https?:\/\/[^\s<>"']+/gi) || []
+  for (const raw of matches) {
+    const cleaned = raw.replace(/[),.;]+$/g, '')
+    if (isShareMapUrl(cleaned)) return cleaned
+  }
+  return null
 }
 
 export function isGoogleMapsUrl(input: string): boolean {
@@ -87,6 +108,39 @@ export type ResultField = (typeof RESULT_FIELDS)[number]
  * about it; a field the user typed survives untouched. `autoFilled` is mutated
  * in place — it is the caller's record of what it owns.
  */
+/** Details for a coord tip can come back with an empty name; keep the label the user picked. */
+export function withFallbackName<T extends Record<string, unknown>>(place: T, fallback: string): T {
+  const name = typeof place.name === 'string' ? place.name.trim() : ''
+  return name ? place : { ...place, name: fallback }
+}
+
+/** First non-URL line of an App share card ("店名\\n地址\\nhttps://…"). */
+export function extractShareCardName(input: string): string {
+  for (const line of input.trim().split(/\r?\n/)) {
+    const text = line.trim()
+    if (text && !extractShareMapUrl(text)) return text
+  }
+  return ''
+}
+
+/** Fold a resolveUrl payload into mergeResult so the previous pick's ids cannot stick. */
+export function shareResolveToResult(
+  resolved: { lat: number; lng: number; name?: string | null; address?: string | null; google_ftid?: string | null },
+  fallbackName = '',
+): Record<string, string> {
+  return {
+    name: resolved.name || fallbackName,
+    address: resolved.address || '',
+    lat: String(resolved.lat),
+    lng: String(resolved.lng),
+    google_ftid: resolved.google_ftid || '',
+    google_place_id: '',
+    osm_id: '',
+    website: '',
+    phone: '',
+  }
+}
+
 export function mergeResult(
   prev: PlaceFormData,
   result: Record<string, unknown>,

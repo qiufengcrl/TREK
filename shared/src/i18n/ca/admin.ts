@@ -98,6 +98,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Obligatòria per cercar llocs. Aconsegueix-la a console.cloud.google.com',
   'admin.mapsKeyHintLong':
     "Sense una clau API, la cerca de llocs fa servir OpenStreetMap. Amb una clau de Google també es poden carregar fotos, valoracions i horaris d'obertura. Aconsegueix-la a console.cloud.google.com.",
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Recomanat',
   'admin.weatherKey': "Clau API d'OpenWeatherMap",
   'admin.weatherKeyHint': 'Per a dades meteorològiques. Gratuït a openweathermap.org',
@@ -377,6 +381,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Clau CARTO compartida',
   'admin.defaultSettings.cartoKeyHint':
     "S'utilitza per a cada usuari que no hagi introduït la seva pròpia clau, de manera que tota la instància obtingui tessel·les de CARTO sense marca d'aigua. S'emmagatzema xifrada.",
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.unsplashKey': "Clau API d'Unsplash",
   'admin.unsplashKeyHint': "Per a la cerca d'imatges. Gratuït a unsplash.com/developers",
   'admin.tabs.plugins': 'Connectors',

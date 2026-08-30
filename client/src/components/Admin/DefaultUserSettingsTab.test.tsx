@@ -1,4 +1,4 @@
-// FE-ADMIN-DUS-001 to FE-ADMIN-DUS-027
+// FE-ADMIN-DUS-001 to FE-ADMIN-DUS-028
 import { render, screen, waitFor, within, fireEvent } from '../../../tests/helpers/render';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -451,5 +451,19 @@ describe('DefaultUserSettingsTab', () => {
     await screen.findByText('Default User Settings');
 
     expect(screen.queryByText('Shared CARTO key')).not.toBeInTheDocument();
+    expect(screen.queryByText('Shared Tianditu key')).not.toBeInTheDocument();
+  });
+
+  it('FE-ADMIN-DUS-028: the shared Tianditu key is stored on blur', async () => {
+    const user = userEvent.setup();
+    const { puts } = stubDefaults({ tianditu_api_key: 'tk.old' });
+    render(<DefaultUserSettingsTab />);
+    await screen.findByText('Shared Tianditu key');
+    const input = within(screen.getByText('Shared Tianditu key').closest('div') as HTMLElement).getByRole('textbox');
+    expect(input).toHaveValue('tk.old');
+    await user.clear(input);
+    await user.type(input, 'tk.new');
+    fireEvent.blur(input);
+    await waitFor(() => expect(puts).toEqual([{ tianditu_api_key: 'tk.new' }]));
   });
 });

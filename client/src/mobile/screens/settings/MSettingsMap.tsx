@@ -39,6 +39,7 @@ const MAP_PRESETS: MapPreset[] = [
   { name: 'CartoDB Light', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' },
   { name: 'CartoDB Dark', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
   { name: 'Stadia Smooth', url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png' },
+  { name: 'Tianditu (天地图)', url: 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}' },
 ]
 
 type Provider = 'leaflet' | GlMapProvider
@@ -78,6 +79,7 @@ export default function MSettingsMap() {
   const managed = useAuthStore((s) => s.managed)
   const [mapboxToken, setMapboxToken] = useState<string>(settings.mapbox_access_token || '')
   const [cartoKey, setCartoKey] = useState<string>(settings.carto_api_key || '')
+  const [tiandituKey, setTiandituKey] = useState<string>(settings.tianditu_api_key || '')
   const [mapboxStyle, setMapboxStyle] = useState<string>(styleForProvider(initialProvider, slotStyle(initialProvider, settings)))
   const [mapbox3d, setMapbox3d] = useState<boolean>(settings.mapbox_3d_enabled !== false)
   const [mapboxQuality, setMapboxQuality] = useState<boolean>(settings.mapbox_quality_mode === true)
@@ -90,6 +92,7 @@ export default function MSettingsMap() {
     setMapTileUrl(settings.map_tile_url || '')
     setMapboxToken(settings.mapbox_access_token || '')
     setCartoKey(settings.carto_api_key || '')
+    setTiandituKey(settings.tianditu_api_key || '')
     setMapboxStyle(styleForProvider(nextProvider, slotStyle(nextProvider, settings)))
     setMapbox3d(settings.mapbox_3d_enabled !== false)
     setMapboxQuality(settings.mapbox_quality_mode === true)
@@ -130,6 +133,7 @@ export default function MSettingsMap() {
         map_tile_url: mapTileUrl,
         mapbox_access_token: mapboxToken,
         carto_api_key: cartoKey,
+        tianditu_api_key: tiandituKey,
         ...stylePatch,
         mapbox_3d_enabled: mapbox3d,
         mapbox_quality_mode: mapboxQuality,
@@ -228,6 +232,25 @@ export default function MSettingsMap() {
               {cartoNeedsKey && (
                 <p className="mt-[6px] font-geist text-[0.625rem] leading-relaxed text-[color:var(--m-st-pending)]">
                   {t('settings.mapCartoKeyMissing')}
+                </p>
+              )}
+              <MSetEyebrow className="mb-[5px] mt-[14px]">{t('settings.mapTiandituKey')}</MSetEyebrow>
+              <MSetInput
+                mono
+                value={tiandituKey}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTiandituKey(e.target.value)}
+                spellCheck={false}
+                autoComplete="off"
+              />
+              <MSetHint>
+                {t('settings.mapTiandituKeyHint')}{' '}
+                <a href="https://console.tianditu.gov.cn/" target="_blank" rel="noreferrer" className="underline">
+                  {t('settings.mapTiandituKeyLink')}
+                </a>
+              </MSetHint>
+              {mapTileUrl.includes('tianditu.gov.cn') && !tiandituKey.trim() && (
+                <p className="mt-[6px] font-geist text-[0.625rem] leading-relaxed text-[color:var(--m-st-pending)]">
+                  {t('settings.mapTiandituKeyMissing')}
                 </p>
               )}
             </>

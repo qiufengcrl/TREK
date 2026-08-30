@@ -138,6 +138,8 @@ export function buildAdminHook(overrides: Record<string, unknown> = {}): AdminHo
     setWeatherKey: vi.fn(),
     unsplashKey: '',
     setUnsplashKey: vi.fn(),
+    amapKey: '',
+    setAmapKey: vi.fn(),
     showKeys: {},
     setShowKeys: vi.fn(),
     savingKeys: false,

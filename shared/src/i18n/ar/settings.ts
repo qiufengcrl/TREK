@@ -37,6 +37,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'مفتاح API لخرائط carto.com الأساسية',
   'settings.mapCartoKeyMissing':
     'هذا القالب خريطة أساسية من CARTO. بدون مفتاح تطبع CARTO عبارة "API KEY REQUIRED" على كل بلاطة. إلى أن تُدخل مفتاحًا، تعرض TREK الخريطة الأساسية الافتراضية بدلاً منها.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'نمط الخريطة',
   'settings.mapStylePlaceholder': 'اختر نمط Mapbox',
   'settings.mapStyleHint': 'إعداد مسبق أو عنوان URL mapbox://styles/USER/ID خاص بك',

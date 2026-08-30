@@ -36,6 +36,12 @@ export const OFM_ATTRIBUTION =
 
 const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 
+/** 天地图矢量（WGS-84）。需要 tk，在 resolveTileUrl 里追加。{s} = 0–7。 */
+export const TIANDITU_VEC = 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}'
+export const TIANDITU_IMG = 'https://t{s}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}'
+export const TIANDITU_SUBDOMAINS = '01234567'
+export const TIANDITU_ATTRIBUTION = '&copy; <a href="https://www.tianditu.gov.cn/">天地图</a>'
+
 /**
  * Attribution for whatever basemap a map ended up with. OpenFreeMap asks for a
  * credit of its own, and printing OpenStreetMap alone under its tiles is both
@@ -46,6 +52,7 @@ export function attributionForTile(url: string | null | undefined): string {
   if (!url) return OSM_ATTRIBUTION
   if (url.includes('openfreemap.org')) return OFM_ATTRIBUTION
   if (url.includes('arcgisonline.com')) return SATELLITE_TILE_ATTRIBUTION
+  if (/t\{s\}|t[0-7]\.tianditu\.gov\.cn/i.test(url)) return TIANDITU_ATTRIBUTION
   return OSM_ATTRIBUTION
 }
 

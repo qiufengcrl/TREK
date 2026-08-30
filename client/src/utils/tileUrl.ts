@@ -45,8 +45,37 @@ export function withTileApiKey(url: string, key?: string | null): string {
 
 /** Keeps the key out of anything we persist: stored templates, book documents. */
 export function stripTileApiKey(url: string): string {
-  if (!url || !/[?&]key=/.test(url)) return url
-  return url.replace(/([?&])key=[^&]*&?/, '$1').replace(/[?&]$/, '')
+  if (!url) return url
+  let next = url
+  if (/[?&]key=/.test(next)) next = next.replace(/([?&])key=[^&]*&?/, '$1').replace(/[?&]$/, '')
+  if (/[?&]tk=/.test(next)) next = next.replace(/([?&])tk=[^&]*&?/, '$1').replace(/[?&]$/, '')
+  return next
+}
+
+/**
+ * Same promise as CARTO: the tk is only appended when the *host* is Tianditu.
+ * A path or query that merely mentions `tianditu.gov.cn` (or a look-alike like
+ * `tianditu.gov.cn.evil.com`) must never receive the key.
+ */
+const TIANDITU_HOST = /^(?:t\{s\}|t[0-7])\.tianditu\.gov\.cn$/i
+
+export function isTiandituTileUrl(url: string): boolean {
+  if (!url) return false
+  return TIANDITU_HOST.test(templateHost(url))
+}
+
+/** 天地图矢量底图配注记层（cva_w / cia_w）。 */
+export function tiandituLabelUrl(url: string): string | null {
+  if (!isTiandituTileUrl(url)) return null
+  if (url.includes('T=vec_w')) return url.replace('T=vec_w', 'T=cva_w')
+  if (url.includes('T=img_w')) return url.replace('T=img_w', 'T=cia_w')
+  return null
+}
+
+export function withTiandituKey(url: string, key?: string | null): string {
+  if (!url || !key || !isTiandituTileUrl(url)) return url
+  if (/[?&]tk=/.test(url)) return url
+  return `${url}${url.includes('?') ? '&' : '?'}tk=${encodeURIComponent(key)}`
 }
 
 /**
@@ -69,8 +98,13 @@ function isKeylessCarto(url: string): boolean {
  * A blank template means "not configured", not "no tiles": the settings
  * previews save an empty string and would otherwise render grey.
  */
-export function resolveTileUrl(template: string | null | undefined, fallback: string, cartoKey?: string | null): string {
-  const chosen = withTileApiKey(normalizeTileUrl(template?.trim() || fallback), cartoKey)
+export function resolveTileUrl(
+  template: string | null | undefined,
+  fallback: string,
+  cartoKey?: string | null,
+  tiandituKey?: string | null,
+): string {
+  const chosen = withTiandituKey(withTileApiKey(normalizeTileUrl(template?.trim() || fallback), cartoKey), tiandituKey)
   return isKeylessCarto(chosen) ? fallback : chosen
 }
 
@@ -108,8 +142,9 @@ export function resolveBasemap(
   template: string | null | undefined,
   fallback: string,
   cartoKey?: string | null,
+  tiandituKey?: string | null,
 ): Basemap {
-  const chosen = resolveTileUrl(template, fallback, cartoKey)
+  const chosen = resolveTileUrl(template, fallback, cartoKey, tiandituKey)
   if (isVectorStyle(chosen)) return { kind: 'vector', style: chosen }
   return { kind: 'raster', url: chosen }
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useTileUrl, useCartoApiKey } from './useTileUrl'
 import { useSettingsStore } from '../store/settingsStore'
-import { CARTO_LIGHT, CARTO_DARK } from '../constants/mapDefaults'
+import { CARTO_LIGHT, CARTO_DARK, TIANDITU_VEC } from '../constants/mapDefaults'
 import type { Settings } from '../types'
 
 const OSM = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -72,6 +72,12 @@ describe('useTileUrl', () => {
     const { result } = renderHook(() => useTileUrl(CARTO_LIGHT))
     act(() => setSettings({ map_tile_url: SELF_HOSTED }))
     expect(result.current).toBe(SELF_HOSTED)
+  })
+
+  it('FE-TILEURL-011: appends the Tianditu tk to a vec_w template', () => {
+    setSettings({ map_tile_url: TIANDITU_VEC, tianditu_api_key: 'tk-1' })
+    const { result } = renderHook(() => useTileUrl(OSM))
+    expect(result.current).toBe(`${TIANDITU_VEC}&tk=tk-1`)
   })
 })
 

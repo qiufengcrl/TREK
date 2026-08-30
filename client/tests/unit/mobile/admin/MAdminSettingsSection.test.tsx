@@ -3,7 +3,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { render, screen, waitFor } from '../../../helpers/render';
+import { render, screen, waitFor, within } from '../../../helpers/render';
 import { server } from '../../../helpers/msw/server';
 import { resetAllStores } from '../../../helpers/store';
 import { buildAdminHook, type AdminHook } from '../../../helpers/mobileAdmin';
@@ -26,6 +26,19 @@ function renderSettings(overrides: Record<string, unknown> = {}) {
 
 function toggle(label: string): HTMLElement {
   return screen.getByRole('switch', { name: label });
+}
+
+/** MAdminField wrapper: the label sits in a child div, the input/Test button in siblings. */
+function apiKeyBlock(label: string): HTMLElement {
+  return screen.getByText(label).closest('div')!.parentElement as HTMLElement;
+}
+
+function apiKeyInput(label: string): HTMLElement {
+  return within(apiKeyBlock(label)).getByPlaceholderText('Enter key...');
+}
+
+function apiKeyTestButton(label: string): HTMLElement {
+  return within(apiKeyBlock(label)).getByRole('button', { name: 'Test' });
 }
 
 /** Client ID / Client Secret are the only inputs of their type without a placeholder. */
@@ -222,14 +235,14 @@ describe('MAdminSettingsSection', () => {
   it('FE-MOB-ASET-013: the maps key validate button is disabled without a key', () => {
     renderSettings({ mapsKey: '' });
 
-    expect(screen.getByRole('button', { name: 'Test' })).toBeDisabled();
+    expect(apiKeyTestButton('Google Maps API Key')).toBeDisabled();
   });
 
   it('FE-MOB-ASET-014: validating a maps key calls the handler for that key type', async () => {
     const user = userEvent.setup();
     const admin = renderSettings({ mapsKey: 'AIza-test' });
 
-    await user.click(screen.getByRole('button', { name: 'Test' }));
+    await user.click(apiKeyTestButton('Google Maps API Key'));
 
     expect(admin.handleValidateKey).toHaveBeenCalledWith('maps');
   });
@@ -250,11 +263,14 @@ describe('MAdminSettingsSection', () => {
     const user = userEvent.setup();
     const admin = renderSettings();
 
-    await user.type(screen.getAllByPlaceholderText('Enter key...')[0], 'm');
+    await user.type(apiKeyInput('Google Maps API Key'), 'm');
     expect(admin.setMapsKey).toHaveBeenCalledWith('m');
 
-    await user.type(screen.getAllByPlaceholderText('Enter key...')[1], 'u');
+    await user.type(apiKeyInput('Unsplash API Key'), 'u');
     expect(admin.setUnsplashKey).toHaveBeenCalledWith('u');
+
+    await user.type(apiKeyInput('Amap (Gaode) Web API Key'), 'a');
+    expect(admin.setAmapKey).toHaveBeenCalledWith('a');
 
     await user.click(screen.getAllByRole('button', { name: 'Save' })[2]);
     expect(admin.handleSaveApiKeys).toHaveBeenCalled();

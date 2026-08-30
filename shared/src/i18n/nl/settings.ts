@@ -39,6 +39,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'carto.com basemap API-sleutel',
   'settings.mapCartoKeyMissing':
     'Deze sjabloon is een CARTO-basiskaart. Zonder sleutel drukt CARTO "API KEY REQUIRED" op elke tegel. Zolang er geen sleutel is, toont TREK de standaardbasiskaart.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'Kaartstijl',
   'settings.mapStylePlaceholder': 'Kies een Mapbox-stijl',
   'settings.mapStyleHint': 'Preset of eigen mapbox://styles/USER/ID URL',

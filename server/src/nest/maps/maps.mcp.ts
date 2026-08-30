@@ -70,15 +70,15 @@ export class MapsMcp {
 
   @Tool({
     name: 'resolve_maps_url',
-    description: 'Resolve a Google Maps share URL to coordinates and place name.',
+    description: 'Resolve a Google Maps or Amap (Gaode) share URL to coordinates and place name.',
     inputSchema: {
-      url: z.string().describe('Google Maps share URL'),
+      url: z.string().describe('Google Maps or Amap share URL'),
     },
     annotations: TOOL_ANNOTATIONS_READONLY,
     access: { group: 'geo', mode: 'read' },
   })
   async resolveMapsUrl({ url }: { url: string }, _ctx: McpContext) {
-    const result = await this.maps.resolveGoogleMapsUrl(url);
+    const result = await this.maps.resolveUrl(url);
     return ok(result);
   }
 

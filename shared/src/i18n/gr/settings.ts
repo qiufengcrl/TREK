@@ -41,6 +41,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'κλειδί API βασικών χαρτών carto.com',
   'settings.mapCartoKeyMissing':
     'Αυτό το πρότυπο είναι βασικός χάρτης CARTO. Χωρίς κλειδί, η CARTO τυπώνει "API KEY REQUIRED" σε κάθε πλακίδιο. Μέχρι να εισαγάγετε κλειδί, το TREK εμφανίζει τον προεπιλεγμένο βασικό χάρτη.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'Στυλ Χάρτη',
   'settings.mapStylePlaceholder': 'Επιλέξτε ένα στυλ Mapbox',
   'settings.mapStyleHint': 'Προκαθορισμένο ή δικό σας mapbox://styles/USER/ID URL',

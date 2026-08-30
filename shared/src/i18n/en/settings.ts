@@ -47,6 +47,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'carto.com basemap API key',
   'settings.mapCartoKeyMissing':
     'This template is a CARTO basemap. Without a key CARTO stamps "API KEY REQUIRED" onto every tile. Until you enter one, TREK shows the default basemap instead.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'Map Style',
   'settings.mapStylePlaceholder': 'Select a Mapbox style',
   'settings.mapStyleHint': 'Preset or your own mapbox://styles/USER/ID URL',

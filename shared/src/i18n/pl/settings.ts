@@ -38,6 +38,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'klucz API map podkładowych carto.com',
   'settings.mapCartoKeyMissing':
     'Ten szablon to mapa podkładowa CARTO. Bez klucza CARTO nanosi "API KEY REQUIRED" na każdy kafelek. Dopóki nie podasz klucza, TREK pokazuje domyślną mapę podkładową.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'Styl mapy',
   'settings.mapStylePlaceholder': 'Wybierz styl Mapbox',
   'settings.mapStyleHint': 'Preset lub własny URL mapbox://styles/USER/ID',

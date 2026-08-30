@@ -2,8 +2,8 @@ import { useEffect, useRef, useImperativeHandle, useCallback, type Ref } from 'r
 import L from 'leaflet'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useCartoApiKey } from '../../hooks/useTileUrl'
-import { isVectorStyle, resolveTileUrl } from '../../utils/tileUrl'
-import { OFM_DARK, OFM_POSITRON, attributionForTile } from '../../constants/mapDefaults'
+import { isTiandituTileUrl, isVectorStyle, resolveTileUrl, tiandituLabelUrl } from '../../utils/tileUrl'
+import { OFM_DARK, OFM_POSITRON, TIANDITU_ATTRIBUTION, TIANDITU_SUBDOMAINS, attributionForTile } from '../../constants/mapDefaults'
 import { attachVectorBasemap, type GlLeafletLayer } from '../Map/VectorBasemap'
 import { escapeHtml, type JourneyTrack } from '@trek/shared'
 
@@ -155,13 +155,15 @@ function JourneyMap(
   const mapTileUrl = useSettingsStore(s => s.settings.map_tile_url)
   const storedCartoKey = useCartoApiKey()
   const cartoKey = cartoApiKey || storedCartoKey
-  const tileUrl = resolveTileUrl(mapTileUrl, dark ? OFM_DARK : OFM_POSITRON, cartoKey)
+  const tiandituKey = useSettingsStore(s => s.settings.tianditu_api_key)
+  const tileUrl = resolveTileUrl(mapTileUrl, dark ? OFM_DARK : OFM_POSITRON, cartoKey, tiandituKey)
   // Read through a ref by the map effect, retiled in place by its own effect below:
   // the CARTO key reaches the store after the first render, and rebuilding the map
   // for that raced with the markers and layers already on it (#2097).
   const tileUrlRef = useRef(tileUrl)
   tileUrlRef.current = tileUrl
   const tileLayerRef = useRef<L.TileLayer | null>(null)
+  const labelLayerRef = useRef<L.TileLayer | null>(null)
   const glLayerRef = useRef<GlLeafletLayer | null>(null)
   // The vector basemap loads async; a map torn down before it lands must not get one.
   const cancelledRef = useRef(false)
@@ -249,9 +251,12 @@ function JourneyMap(
     if (isVectorStyle(tileUrlRef.current)) {
       void attachVectorBasemap(map, tileUrlRef.current, glLayerRef, () => cancelledRef.current)
     } else {
-      const tiles = L.tileLayer(tileUrlRef.current, {
+      const resolved = tileUrlRef.current
+      const tianditu = isTiandituTileUrl(resolved)
+      const tiles = L.tileLayer(resolved, {
         maxZoom: 18,
-        attribution: attributionForTile(tileUrlRef.current),
+        attribution: attributionForTile(resolved),
+        subdomains: tianditu ? TIANDITU_SUBDOMAINS : 'abc',
         referrerPolicy: 'strict-origin-when-cross-origin',
         // Leaflet defaults updateWhenIdle:true on mobile (waits for pan to settle
         // before loading tiles). On the journey mobile combined view we flyTo
@@ -259,9 +264,22 @@ function JourneyMap(
         // updates and keep a larger ring of off-screen tiles ready.
         updateWhenIdle: false,
         keepBuffer: 4,
-      } as any)
+      } as L.TileLayerOptions)
       tiles.addTo(map)
       tileLayerRef.current = tiles
+      const labels = tiandituLabelUrl(resolved)
+      if (labels) {
+        const labelLayer = L.tileLayer(labels, {
+          maxZoom: 18,
+          attribution: TIANDITU_ATTRIBUTION,
+          subdomains: TIANDITU_SUBDOMAINS,
+          referrerPolicy: 'strict-origin-when-cross-origin',
+          updateWhenIdle: false,
+          keepBuffer: 4,
+        } as L.TileLayerOptions)
+        labelLayer.addTo(map)
+        labelLayerRef.current = labelLayer
+      }
     }
 
     const items = buildMarkerItems(entries)
@@ -359,6 +377,8 @@ function JourneyMap(
       map.remove()
       mapRef.current = null
       tileLayerRef.current = null
+      labelLayerRef.current?.remove()
+      labelLayerRef.current = null
       glLayerRef.current?.remove()
       glLayerRef.current = null
       markersRef.current.clear()
@@ -369,8 +389,47 @@ function JourneyMap(
   // marker and track it just drew. A vector basemap restyles instead, which also
   // avoids spending a WebGL context on every theme toggle.
   useEffect(() => {
-    if (isVectorStyle(tileUrl)) glLayerRef.current?.getMaplibreMap()?.setStyle(tileUrl)
-    else tileLayerRef.current?.setUrl(tileUrl)
+    const map = mapRef.current
+    if (!map) return
+    if (isVectorStyle(tileUrl)) {
+      glLayerRef.current?.getMaplibreMap()?.setStyle(tileUrl)
+      tileLayerRef.current?.remove()
+      tileLayerRef.current = null
+      labelLayerRef.current?.remove()
+      labelLayerRef.current = null
+      return
+    }
+    const tianditu = isTiandituTileUrl(tileUrl)
+    const rasterOpts = {
+      maxZoom: 18,
+      attribution: attributionForTile(tileUrl),
+      subdomains: tianditu ? TIANDITU_SUBDOMAINS : 'abc',
+      referrerPolicy: 'strict-origin-when-cross-origin',
+      updateWhenIdle: false,
+      keepBuffer: 4,
+    } as L.TileLayerOptions
+    if (!tileLayerRef.current) {
+      glLayerRef.current?.remove()
+      glLayerRef.current = null
+      const tiles = L.tileLayer(tileUrl, rasterOpts)
+      tiles.addTo(map)
+      tileLayerRef.current = tiles
+    } else {
+      tileLayerRef.current.setUrl(tileUrl)
+      tileLayerRef.current.options.subdomains = tianditu ? TIANDITU_SUBDOMAINS : 'abc'
+    }
+    labelLayerRef.current?.remove()
+    labelLayerRef.current = null
+    const labels = tiandituLabelUrl(tileUrl)
+    if (labels) {
+      const labelLayer = L.tileLayer(labels, {
+        ...rasterOpts,
+        attribution: TIANDITU_ATTRIBUTION,
+        subdomains: TIANDITU_SUBDOMAINS,
+      })
+      labelLayer.addTo(map)
+      labelLayerRef.current = labelLayer
+    }
   }, [tileUrl])
 
   // Photo layer (#1614). Its own effect on purpose: photos arriving must not tear

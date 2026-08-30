@@ -91,6 +91,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Povinné pro hledání míst. Získáte na console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Bez API klíče se pro hledání používá OpenStreetMap. S Google klíčem lze načítat fotky, hodnocení a otevírací dobu.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Doporučeno',
   'admin.weatherKey': 'OpenWeatherMap API klíč',
   'admin.weatherKeyHint': 'Pro data o počasí. Zdarma na openweathermap.org',
@@ -689,6 +693,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Sdílený klíč CARTO',
   'admin.defaultSettings.cartoKeyHint':
     'Použije se pro každého uživatele, který nezadal vlastní klíč, takže celá instance získá dlaždice CARTO bez vodoznaku. Ukládá se šifrovaně.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

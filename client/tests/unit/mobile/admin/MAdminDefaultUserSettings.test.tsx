@@ -1,4 +1,4 @@
-// FE-MOB-MDUS-001 to FE-MOB-MDUS-027
+// FE-MOB-MDUS-001 to FE-MOB-MDUS-028
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, within, fireEvent } from '../../../helpers/render';
 import userEvent from '@testing-library/user-event';
@@ -408,6 +408,20 @@ describe('MAdminDefaultUserSettings', () => {
     await screen.findByText('Default User Settings');
 
     expect(screen.queryByText('Shared CARTO key')).not.toBeInTheDocument();
+    expect(screen.queryByText('Shared Tianditu key')).not.toBeInTheDocument();
+  });
+
+  it('FE-MOB-MDUS-028: the shared Tianditu key is stored on blur', async () => {
+    const user = userEvent.setup();
+    const { puts } = stubDefaults({ tianditu_api_key: 'tk.old' });
+    render(<MAdminDefaultUserSettings />);
+    await screen.findByText('Shared Tianditu key');
+    const input = within(screen.getByText('Shared Tianditu key').parentElement as HTMLElement).getByRole('textbox');
+    expect(input).toHaveValue('tk.old');
+    await user.clear(input);
+    await user.type(input, 'tk.new');
+    input.blur();
+    await waitFor(() => expect(puts).toEqual([{ tianditu_api_key: 'tk.new' }]));
   });
 
   it('FE-MOB-MDUS-027: a managed instance hides the shared Mapbox token as well', async () => {

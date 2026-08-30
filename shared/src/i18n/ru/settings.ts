@@ -39,6 +39,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'ключ API базовых карт carto.com',
   'settings.mapCartoKeyMissing':
     'Этот шаблон является базовой картой CARTO. Без ключа CARTO наносит "API KEY REQUIRED" на каждый тайл. Пока ключ не указан, TREK показывает базовую карту по умолчанию.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'Стиль карты',
   'settings.mapStylePlaceholder': 'Выберите стиль Mapbox',
   'settings.mapStyleHint': 'Preset или собственный URL mapbox://styles/USER/ID',

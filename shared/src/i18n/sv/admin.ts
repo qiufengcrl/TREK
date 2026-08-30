@@ -135,6 +135,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Krävs för att söka efter platser. Hämta på console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Utan en API-nyckel används OpenStreetMap för platssökning. Med en Google API-nyckel kan även foton, betyg och öppettider hämtas. Skaffa en på console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Rekommenderat',
   'admin.weatherKey': 'OpenWeatherMap API Nyckel',
   'admin.weatherKeyHint': 'För väderdata. Gratis på openweathermap.org',
@@ -204,6 +208,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Delad CARTO-nyckel',
   'admin.defaultSettings.cartoKeyHint':
     'Används för alla användare som inte har angett en egen nyckel, på så sätt får hela instansen CARTO-rutor utan vattenstämpel. Lagras i krypterad form.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.tabs.templates': 'Packningsmallar',
   'admin.packingTemplates.title': 'Packningsmallar',
   'admin.packingTemplates.subtitle': 'Skapa återanvändbara packlistor för dina resor',

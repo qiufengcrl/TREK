@@ -202,7 +202,11 @@ export function applyGlobalMiddleware(
           "https://geocoding-api.open-meteo.com", "https://api.frankfurter.dev",
           "https://router.project-osrm.org/route/v1/", "https://routing.openstreetmap.de/",
           "https://api.mapbox.com", "https://*.tiles.mapbox.com", "https://events.mapbox.com",
-          "https://tiles.openfreemap.org"
+          "https://tiles.openfreemap.org",
+          "https://*.tianditu.gov.cn", "https://t0.tianditu.gov.cn", "https://t1.tianditu.gov.cn",
+          "https://t2.tianditu.gov.cn", "https://t3.tianditu.gov.cn", "https://t4.tianditu.gov.cn",
+          "https://t5.tianditu.gov.cn", "https://t6.tianditu.gov.cn", "https://t7.tianditu.gov.cn",
+          "https://restapi.amap.com", "https://uri.amap.com"
         ],
         workerSrc: ["'self'", "blob:"],
         childSrc: ["'self'", "blob:"],

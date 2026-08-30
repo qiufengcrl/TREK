@@ -19,8 +19,8 @@ import { escapeHtml } from '@trek/shared'
 import type { Day, Reservation, RouteVia } from '../../types'
 import { POI_CATEGORY_BY_KEY, type Poi } from './poiCategories'
 import { resolveTrackColor, hasManualTrackColor } from './trackColors'
-import { OFM_POSITRON, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, MAP_MAX_ZOOM, SATELLITE_TILE_URL, SATELLITE_TILE_ATTRIBUTION, SATELLITE_TILE_MAXZOOM, attributionForTile } from '../../constants/mapDefaults'
-import { resolveBasemap } from '../../utils/tileUrl'
+import { OFM_POSITRON, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, MAP_MAX_ZOOM, SATELLITE_TILE_URL, SATELLITE_TILE_ATTRIBUTION, SATELLITE_TILE_MAXZOOM, TIANDITU_ATTRIBUTION, TIANDITU_SUBDOMAINS, attributionForTile } from '../../constants/mapDefaults'
+import { isTiandituTileUrl, resolveBasemap, tiandituLabelUrl } from '../../utils/tileUrl'
 import VectorBasemap from './VectorBasemap'
 import { useSettingsStore } from '../../store/settingsStore'
 import { MapLayerSwitcher } from './MapLayerSwitcher'
@@ -859,16 +859,32 @@ export const MapView = memo(function MapView({
       ) : basemap.kind === 'vector' ? (
         <VectorBasemap style={basemap.style} />
       ) : (
-        <TileLayer
-          key="raster"
-          url={basemap.url}
-          attribution={attributionForTile(basemap.url)}
-          maxZoom={19}
-          keepBuffer={8}
-          updateWhenZooming={false}
-          updateWhenIdle={true}
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+        <>
+          <TileLayer
+            key={basemap.url}
+            url={basemap.url}
+            attribution={attributionForTile(basemap.url)}
+            maxZoom={19}
+            subdomains={isTiandituTileUrl(basemap.url) ? TIANDITU_SUBDOMAINS : 'abc'}
+            keepBuffer={8}
+            updateWhenZooming={false}
+            updateWhenIdle={true}
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+          {tiandituLabelUrl(basemap.url) && (
+            <TileLayer
+              key={`${basemap.url}-labels`}
+              url={tiandituLabelUrl(basemap.url)!}
+              attribution={TIANDITU_ATTRIBUTION}
+              maxZoom={19}
+              subdomains={TIANDITU_SUBDOMAINS}
+              keepBuffer={8}
+              updateWhenZooming={false}
+              updateWhenIdle={true}
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          )}
+        </>
       )}
 
       <MapController center={center} zoom={zoom} />

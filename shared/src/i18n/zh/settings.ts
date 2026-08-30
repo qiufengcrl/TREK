@@ -37,6 +37,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyHint': '没有密钥时 CARTO 底图会显示水印。免费且无需账户，来自',
   'settings.mapCartoKeyLink': 'carto.com 底图 API 密钥',
   'settings.mapCartoKeyMissing': '此模板是 CARTO 底图。没有密钥时，CARTO 会在每个瓦片上打上 "API KEY REQUIRED"。 在输入密钥之前，TREK 会显示默认底图。',
+  'settings.mapTiandituKey': '天地图密钥',
+  'settings.mapTiandituKeyHint': '天地图底图需要 tk。在此申请浏览器端密钥：',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    '当前模板是天地图。没有 tk 时瓦片不会加载。',
   'settings.mapStyle': '地图样式',
   'settings.mapStylePlaceholder': '选择 Mapbox 样式',
   'settings.mapStyleHint': '预设或您自己的 mapbox://styles/USER/ID URL',

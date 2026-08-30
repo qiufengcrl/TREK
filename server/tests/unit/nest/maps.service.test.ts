@@ -543,6 +543,25 @@ describe('reverseGeocode (fetch stubbed)', () => {
     expect(result.name).toBeNull();
     expect(result.address).toBe('Somewhere');
   });
+
+  it('MAPS-018a: uses Amap reverse when an instance Amap key is set', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        regeocode: { formatted_address: '北京市东城区天安门', addressComponent: { building: { name: '天安门' } } },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.reverseGeocode('39.908823', '116.39747');
+    expect(result.name).toBe('天安门');
+    expect(result.address).toBe('北京市东城区天安门');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('geocode/regeo');
+  });
 });
 
 // Nominatim stub used by resolveGoogleMapsUrl after coordinate extraction
@@ -753,6 +772,72 @@ describe('resolveGoogleMapsUrl coordinate extraction (ReDoS guards)', () => {
     expect(result.lng).toBeCloseTo(2.2945, 3);
     expect(result.name).toBe('Eiffel Tower');
     expect(result.address).toBeNull();
+  });
+
+  it('MAPS-resolve-amap-p: reads poiid/lat/lng from the App share p= query', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('no details'));
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.resolveUrl(
+      'https://www.amap.com/?p=B0G16U0P5K,31.140408668664158,121.11573144793509,青溪园,青浦区淀浦河南侧',
+    );
+    expect(result.name).toBe('青溪园');
+    expect(result.address).toBe('青浦区淀浦河南侧');
+    expect(result.lat).toBeCloseTo(31.14, 2);
+    expect(result.lng).toBeCloseTo(121.11, 2);
+  });
+
+  it('MAPS-resolve-amap: extracts a GCJ position from an Amap share URL', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('no follow'));
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.resolveUrl(
+      'https://uri.amap.com/marker?position=116.39747,39.908823&name=天安门',
+    );
+    expect(result.name).toBe('天安门');
+    expect(result.lng).toBeLessThan(116.39747);
+    expect(result.lat).toBeLessThan(39.908823);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('MAPS-resolve-amap-surl-host: discards a short link that lands off Amap', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      url: 'https://evil.example/pin?position=116.39,39.90&name=Hacked',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(svc.resolveUrl('https://surl.amap.com/abc')).rejects.toMatchObject({ status: 400 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('MAPS-resolve-amap-empty: does not fall through to Google when Amap has no pin', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ url: 'https://www.amap.com/' });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(svc.resolveUrl('https://www.amap.com/')).rejects.toMatchObject({
+      status: 400,
+      message: 'Could not extract coordinates from URL',
+    });
+    expect(fetchMock.mock.calls.every(([u]) => !String(u).includes('google'))).toBe(true);
+  });
+
+  it('MAPS-resolve-amap-keep-url-address: an empty reverse must not wipe the share-card address', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: '1', pois: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: '1', regeocode: { formatted_address: [] } }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.resolveUrl(
+      'https://www.amap.com/?p=B0G16U0P5K,31.140408668664158,121.11573144793509,青溪园,青浦区淀浦河南侧',
+    );
+    errorSpy.mockRestore();
+    expect(result.name).toBe('青溪园');
+    expect(result.address).toBe('青浦区淀浦河南侧');
   });
 });
 
@@ -1191,13 +1276,132 @@ describe('searchPlaces (fetch stubbed)', () => {
     expect(Array.isArray(result.places)).toBe(true);
   });
 
+  it('MAPS-038a: uses Amap when an instance Amap key is set, even if a Google key exists', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    mockDbGet.mockReturnValue({ maps_api_key: 'google-key' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [{ id: 'B000', name: '故宫', address: '北京', location: '116.39747,39.908823' }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await svc.searchPlaces(1, '故宫');
+    expect(result.source).toBe('amap');
+    expect((result.places[0] as { name: string }).name).toBe('故宫');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('extensions=all');
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('places.googleapis.com');
+  });
+
+  it('MAPS-038b: empty Amap results fall through to Google', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : key === 'maps_api_key' ? { value: 'google-key' } : undefined,
+    );
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: '1', pois: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          places: [{ id: 'gid1', displayName: { text: 'Eiffel Tower' }, formattedAddress: 'Paris' }],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await svc.searchPlaces(1, 'Eiffel');
+    expect(result.source).toBe('google');
+    expect((result.places[0] as { google_place_id?: string }).google_place_id).toBe('gid1');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('places.googleapis.com');
+  });
+
+  it('MAPS-038c: an Amap error falls through to Google', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : key === 'maps_api_key' ? { value: 'google-key' } : undefined,
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: '0', infocode: '10001', info: 'INVALID_USER_KEY' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          places: [{ id: 'gid1', displayName: { text: 'Louvre' } }],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await svc.searchPlaces(1, 'Louvre');
+    errorSpy.mockRestore();
+    expect(result.source).toBe('google');
+    expect((result.places[0] as { google_place_id?: string }).google_place_id).toBe('gid1');
+  });
+
+  it('MAPS-038d: forwards locationBias to Amap as a GCJ location', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [{ id: 'B000', name: '故宫', address: '北京', location: '116.39747,39.908823' }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await svc.searchPlaces(1, '故宫', 'zh', { lat: 39.908823, lng: 116.39747 });
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain('location=');
+    const loc = new URL(url).searchParams.get('location');
+    const [lng, lat] = loc!.split(',').map(Number);
+    expect(lng).toBeGreaterThan(116.39747);
+    expect(lat).toBeGreaterThan(39.908823);
+  });
+
+  it('MAPS-038e: an Amap miss with no Google key falls through to Nominatim', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: '1', pois: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { osm_type: 'node', osm_id: '1', lat: '48.8', lon: '2.3', display_name: 'Paris, France', name: 'Paris' },
+        ],
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.searchPlaces(1, 'Paris');
+    expect(result.source).toBe('openstreetmap');
+    expect((result.places[0] as { name: string }).name).toBe('Paris');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('nominatim');
+  });
+
   // Session tokens: the keystrokes of one search and the details lookup that
   // ends it must reach Google under the same token, or every request is billed
   // on its own. The body field and the query parameter are what Google's
   // reference specifies for each half.
   it('MAPS-039f: sends the session token in the autocomplete body', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'ENCRYPTED' }).mockReturnValueOnce(null);
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ suggestions: [] }) });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        suggestions: [{ placePrediction: { placeId: 'ChIJ', structuredFormat: { mainText: { text: 'Eiffel' } } } }],
+      }),
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     await svc.autocompletePlaces(1, 'eiff', 'en', undefined, 'sess-123');
@@ -1209,7 +1413,12 @@ describe('searchPlaces (fetch stubbed)', () => {
 
   it('MAPS-039g: omits the field entirely when there is no session token', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'ENCRYPTED' }).mockReturnValueOnce(null);
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ suggestions: [] }) });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        suggestions: [{ placePrediction: { placeId: 'ChIJ', structuredFormat: { mainText: { text: 'Eiffel' } } } }],
+      }),
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     await svc.autocompletePlaces(1, 'eiff', 'en');
@@ -1244,34 +1453,46 @@ describe('searchPlaces (fetch stubbed)', () => {
     expect((result.places[0] as any).google_ftid).toBeNull();
   });
 
-  it('MAPS-039b: throws with Google error status when Google API returns non-ok', async () => {
+  it('MAPS-039b: a Google error falls through to Nominatim', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'some-key' });
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 403,
-        json: async () => ({ error: { message: 'API key invalid' } }),
-      }),
+      vi.fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          json: async () => ({ error: { message: 'API key invalid' } }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [
+            { osm_type: 'node', osm_id: '1', lat: '48.8', lon: '2.3', display_name: 'Paris, France', name: 'Paris' },
+          ],
+        }),
     );
-    await expect(svc.searchPlaces(1, 'anything')).rejects.toMatchObject({
-      message: 'API key invalid',
-      status: 403,
-    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const result = await svc.searchPlaces(1, 'anything');
+    errorSpy.mockRestore();
+    expect(result.source).toBe('openstreetmap');
+    expect((result.places[0] as { name: string }).name).toBe('Paris');
   });
 
   it('MAPS-039h: a Google rejection logs which credential was used, never the credential (#1939)', async () => {
-    mockInstanceGet.mockReturnValueOnce({ value: 'instance-secret-key' });
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 403,
-        json: async () => ({ error: { message: 'The caller does not have permission' } }),
-      }),
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'maps_api_key' ? { value: 'instance-secret-key' } : undefined,
     );
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await expect(svc.searchPlaces(7, 'anything')).rejects.toMatchObject({ status: 403 });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          json: async () => ({ error: { message: 'The caller does not have permission' } }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] }),
+    );
+    await svc.searchPlaces(7, 'anything');
     const logged = errorSpy.mock.calls.map((c) => String(c[0])).join('\n');
     expect(logged).toContain('keySource=instance');
     expect(logged).toContain('userId=7');
@@ -1279,33 +1500,38 @@ describe('searchPlaces (fetch stubbed)', () => {
     errorSpy.mockRestore();
   });
 
-  it('MAPS-039c: throws with generic message when Google error has no message', async () => {
+  it('MAPS-039c: a Google error without a message still falls through to Nominatim', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'some-key' });
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: async () => ({ error: {} }),
-      }),
+      vi.fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: async () => ({ error: {} }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] }),
     );
-    await expect(svc.searchPlaces(1, 'anything')).rejects.toMatchObject({
-      message: 'Google Places API error',
-      status: 500,
-    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const result = await svc.searchPlaces(1, 'anything');
+    errorSpy.mockRestore();
+    expect(result.source).toBe('openstreetmap');
+    expect(result.places).toEqual([]);
   });
 
-  it('MAPS-039d: returns empty places array when Google returns no results', async () => {
+  it('MAPS-039d: empty Google results fall through to Nominatim', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'some-key' });
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ places: [] }),
-      }),
+      vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ places: [] }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] }),
     );
     const result = await svc.searchPlaces(1, 'very obscure place');
-    expect(result.source).toBe('google');
+    expect(result.source).toBe('openstreetmap');
     expect(result.places).toHaveLength(0);
   });
 
@@ -1400,6 +1626,59 @@ describe('autocompletePlaces (fetch stubbed)', () => {
     expect(result.suggestions[0].placeId).toBe('node:1');
   });
 
+  it('MAPS-081a: empty Amap autocomplete falls through to Google', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : key === 'maps_api_key' ? { value: 'google-key' } : undefined,
+    );
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: '1', tips: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          suggestions: [
+            {
+              placePrediction: {
+                placeId: 'ChIJ1234',
+                structuredFormat: { mainText: { text: 'Eiffel Tower' }, secondaryText: { text: 'Paris' } },
+              },
+            },
+          ],
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.autocompletePlaces(1, 'Eiffel');
+    expect(result.source).toBe('google');
+    expect(result.suggestions[0].placeId).toBe('ChIJ1234');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('places.googleapis.com');
+  });
+
+  it('MAPS-081b: an Amap autocomplete error falls through to Nominatim when there is no Google key', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: '0', infocode: '10001', info: 'INVALID_USER_KEY' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { osm_type: 'node', osm_id: '1', lat: '48.8', lon: '2.3', display_name: 'Paris, France', name: 'Paris' },
+        ],
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.autocompletePlaces(1, 'Paris');
+    errorSpy.mockRestore();
+    expect(result.source).toBe('nominatim');
+    expect(result.suggestions[0].mainText).toBe('Paris');
+  });
+
   it('MAPS-082: uses Google when user has an API key', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'ENCRYPTED' }).mockReturnValueOnce(null);
     vi.stubGlobal(
@@ -1429,63 +1708,79 @@ describe('autocompletePlaces (fetch stubbed)', () => {
     expect(result.suggestions[0].secondaryText).toBe('Paris, France');
   });
 
-  it('MAPS-083: throws with Google error status when API returns non-ok', async () => {
+  it('MAPS-083: a Google autocomplete error falls through to Nominatim', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'some-key' });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 403,
-        json: async () => ({ error: { message: 'API key invalid' } }),
-      }),
+      vi.fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          json: async () => ({ error: { message: 'API key invalid' } }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [
+            { osm_type: 'node', osm_id: '1', lat: '48.8', lon: '2.3', display_name: 'Paris, France', name: 'Paris' },
+          ],
+        }),
     );
-    await expect(svc.autocompletePlaces(1, 'anything')).rejects.toMatchObject({
-      message: 'API key invalid',
-      status: 403,
-    });
+    const result = await svc.autocompletePlaces(1, 'anything');
+    errorSpy.mockRestore();
+    expect(result.source).toBe('nominatim');
+    expect(result.suggestions[0].mainText).toBe('Paris');
   });
 
   it('MAPS-083b: the autocomplete rejection logs the key source too (#1939)', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'own-row-secret' });
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({ error: { message: 'nope' } }) }),
+      vi.fn()
+        .mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({ error: { message: 'nope' } }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] }),
     );
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await expect(svc.autocompletePlaces(4, 'anything')).rejects.toMatchObject({ status: 403 });
+    const result = await svc.autocompletePlaces(4, 'anything');
     const logged = errorSpy.mock.calls.map((c) => String(c[0])).join('\n');
+    errorSpy.mockRestore();
+    expect(result.source).toBe('nominatim');
     expect(logged).toContain('keySource=user-row');
     expect(logged).not.toContain('own-row-secret');
-    errorSpy.mockRestore();
   });
 
-  it('MAPS-084: throws generic message when Google error has no message', async () => {
+  it('MAPS-084: a Google autocomplete error without a message still falls through', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'some-key' });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: async () => ({ error: {} }),
-      }),
+      vi.fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: async () => ({ error: {} }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] }),
     );
-    await expect(svc.autocompletePlaces(1, 'anything')).rejects.toMatchObject({
-      message: 'Google Places Autocomplete error',
-      status: 500,
-    });
+    const result = await svc.autocompletePlaces(1, 'anything');
+    errorSpy.mockRestore();
+    expect(result.source).toBe('nominatim');
+    expect(result.suggestions).toHaveLength(0);
   });
 
-  it('MAPS-085: returns empty suggestions when Google returns no results', async () => {
+  it('MAPS-085: empty Google autocomplete results fall through to Nominatim', async () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'some-key' });
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ suggestions: [] }),
-      }),
+      vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ suggestions: [] }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => [] }),
     );
     const result = await svc.autocompletePlaces(1, 'very obscure place');
-    expect(result.source).toBe('google');
+    expect(result.source).toBe('nominatim');
     expect(result.suggestions).toHaveLength(0);
   });
 
@@ -1533,7 +1828,9 @@ describe('autocompletePlaces (fetch stubbed)', () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'test-key' });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ suggestions: [] }),
+      json: async () => ({
+        suggestions: [{ placePrediction: { placeId: 'ChIJ', structuredFormat: { mainText: { text: 'Paris' } } } }],
+      }),
     });
     vi.stubGlobal('fetch', fetchMock);
     await svc.autocompletePlaces(1, 'test', 'en', { low: { lat: 48.5, lng: 2.0 }, high: { lat: 49.0, lng: 2.8 } });
@@ -1552,7 +1849,9 @@ describe('autocompletePlaces (fetch stubbed)', () => {
     mockDbGet.mockReturnValueOnce({ maps_api_key: 'test-key' });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ suggestions: [] }),
+      json: async () => ({
+        suggestions: [{ placePrediction: { placeId: 'ChIJ', structuredFormat: { mainText: { text: 'Paris' } } } }],
+      }),
     });
     vi.stubGlobal('fetch', fetchMock);
     await svc.autocompletePlaces(1, 'test', 'en');
@@ -1628,6 +1927,25 @@ describe('autocompletePlaces (fetch stubbed)', () => {
 // ── getPlaceDetails (fetch stubbed) ─────────────────────────────────────────
 
 describe('getPlaceDetails (fetch stubbed)', () => {
+  it('MAPS-040-amap: an amap: id is resolved before the OSM colon check', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          status: '1',
+          pois: [{ id: 'B000', name: '天安门', address: '北京', location: '2.3522,48.8566' }],
+        }),
+      }),
+    );
+    const result = await svc.getPlaceDetails(1, 'amap:B000');
+    expect(result.place).toMatchObject({ name: '天安门', source: 'amap' });
+    expect(String((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0])).toContain('restapi.amap.com');
+  });
+
   it('MAPS-040: handles OSM placeId (way:id) via Overpass', async () => {
     vi.stubGlobal(
       'fetch',
@@ -1981,6 +2299,24 @@ describe('getPlaceDetails (fetch stubbed)', () => {
     await expect(svc.getPlaceDetailsExpanded(1, 'coords:48.8,2.3')).resolves.toEqual({ place: null });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('MAPS-041j: getPlaceDetailsExpanded serves an amap: id from Amap, not Google', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [{ id: 'B000', name: '天安门', address: '北京', location: '2.3522,48.8566' }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.getPlaceDetailsExpanded(1, 'amap:B000');
+    expect(result.place).toMatchObject({ name: '天安门', source: 'amap' });
+    expect(fetchMock.mock.calls.map((call) => String(call[0])).some((url) => url.includes('places.googleapis.com')))
+      .toBe(false);
+  });
 });
 
 // ── getPlacePhoto (fetch stubbed) ────────────────────────────────────────────
@@ -2307,6 +2643,7 @@ describe('isGooglePlaceId', () => {
     expect(isGooglePlaceId('node:5255005321')).toBe(false);
     expect(isGooglePlaceId('way:84527326')).toBe(false);
     expect(isGooglePlaceId('relation:345407')).toBe(false);
+    expect(isGooglePlaceId('amap:B000A83M61')).toBe(false);
     expect(isGooglePlaceId('https://lh3.googleusercontent.com/photo.jpg')).toBe(false);
     // The collection views send the bare coordinate pair when a place has no ids.
     expect(isGooglePlaceId('36.7617499,-3.8448432')).toBe(false);

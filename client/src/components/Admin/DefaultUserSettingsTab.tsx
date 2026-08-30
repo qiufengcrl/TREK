@@ -8,7 +8,7 @@ import CustomSelect from '../shared/CustomSelect'
 import { MapView } from '../Map/MapView'
 import { SYMBOLS, currenciesWith } from '../Budget/BudgetPanel.constants'
 import type { DistanceUnit, Place } from '../../types'
-import { normalizeTileUrl, withTileApiKey } from '../../utils/tileUrl'
+import { normalizeTileUrl, withTiandituKey, withTileApiKey } from '../../utils/tileUrl'
 import {
   MAPBOX_DEFAULT_STYLE,
   defaultStyleForProvider,
@@ -32,6 +32,7 @@ const MAP_PRESETS = [
   { name: 'CartoDB Light', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' },
   { name: 'CartoDB Dark', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
   { name: 'Stadia Smooth', url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png' },
+  { name: 'Tianditu (天地图)', url: 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}' },
 ]
 
 type Defaults = {
@@ -43,6 +44,7 @@ type Defaults = {
   blur_booking_codes?: boolean
   map_tile_url?: string
   carto_api_key?: string
+  tianditu_api_key?: string
   map_provider?: string
   mapbox_access_token?: string
   mapbox_style?: string
@@ -119,6 +121,7 @@ export default function DefaultUserSettingsTab(): React.ReactElement {
   const managed = useAuthStore((s) => s.managed)
   const [mapboxToken, setMapboxToken] = useState('')
   const [cartoKey, setCartoKey] = useState('')
+  const [tiandituKey, setTiandituKey] = useState('')
   const [mapboxStyle, setMapboxStyle] = useState('')
 
   useEffect(() => {
@@ -128,6 +131,7 @@ export default function DefaultUserSettingsTab(): React.ReactElement {
       setMapTileUrl(normalizeTileUrl(data.map_tile_url || ''))
       setMapboxToken(data.mapbox_access_token || '')
       setCartoKey(data.carto_api_key || '')
+      setTiandituKey(data.tianditu_api_key || '')
       setMapboxStyle(provider === 'leaflet' ? (data.mapbox_style || '') : styleForProvider(provider, provider === 'maplibre-gl' ? data.maplibre_style : data.mapbox_style))
       setLoaded(true)
     }).catch(() => setLoaded(true))
@@ -150,6 +154,7 @@ export default function DefaultUserSettingsTab(): React.ReactElement {
       if (key === 'map_tile_url') setMapTileUrl('')
       if (key === 'mapbox_access_token') setMapboxToken('')
       if (key === 'carto_api_key') setCartoKey('')
+      if (key === 'tianditu_api_key') setTiandituKey('')
       if (key === 'mapbox_style' || key === 'maplibre_style') {
         const provider = normalizeProvider(defaults.map_provider)
         setMapboxStyle(provider === 'leaflet' ? '' : defaultStyleForProvider(provider))
@@ -365,6 +370,24 @@ export default function DefaultUserSettingsTab(): React.ReactElement {
           <p className="text-xs mt-1 text-content-faint">{t('admin.defaultSettings.cartoKeyHint')}</p>
         </div>
         )}
+        {!managed && (
+        <div style={{ marginTop: 14 }}>
+          <label className="block text-sm font-medium mb-1.5 text-content-secondary">
+            {t('admin.defaultSettings.tiandituKey')}
+            <ResetButton field="tianditu_api_key" />
+          </label>
+          <input
+            type="text"
+            value={tiandituKey}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTiandituKey(e.target.value)}
+            onBlur={() => save({ tianditu_api_key: tiandituKey })}
+            spellCheck={false}
+            autoComplete="off"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 focus:border-transparent"
+          />
+          <p className="text-xs mt-1 text-content-faint">{t('admin.defaultSettings.tiandituKeyHint')}</p>
+        </div>
+        )}
         <div style={{ position: 'relative', height: '200px', width: '100%', marginTop: 12 }}>
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {React.createElement(MapView as any, {
@@ -380,7 +403,7 @@ export default function DefaultUserSettingsTab(): React.ReactElement {
             zoom: 10,
             // Same as the user-facing map tab: the field holds what is being
             // edited, so the key goes back on before the preview resolves it.
-            tileUrl: withTileApiKey(mapTileUrl, cartoKey),
+            tileUrl: withTiandituKey(withTileApiKey(mapTileUrl, cartoKey), tiandituKey),
             fitKey: null,
             dayOrderMap: [],
             leftWidth: 0,

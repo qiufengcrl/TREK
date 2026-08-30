@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, Search } from 'lucide-react'
 import { mapsApi } from '../../../../api/client'
 import { PlacesSession } from '../../../../utils/placesSession'
-import { isGoogleMapsUrl } from '../../../../components/Planner/PlaceFormModal.helpers'
+import { extractShareCardName, extractShareMapUrl, shareResolveToResult, withFallbackName } from '../../../../components/Planner/PlaceFormModal.helpers'
 import { getApiErrorMessage } from '../../../../utils/apiError'
 import { FIELD_CLS } from './PlSheetChrome'
 import type { TripPlanner } from '../MTripShell'
@@ -100,7 +100,7 @@ export default function PlPlaceSearch({ planner, locationBias, onPick, onResolvi
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const trimmed = query.trim()
-    if (trimmed.length < 2 || isGoogleMapsUrl(trimmed) || COORD_RE.test(trimmed)) {
+    if (trimmed.length < 2 || extractShareMapUrl(trimmed) || COORD_RE.test(trimmed)) {
       setSuggestions([])
       return
     }
@@ -132,16 +132,11 @@ export default function PlPlaceSearch({ planner, locationBias, onPick, onResolvi
 
     setResolving(true)
     try {
-      if (isGoogleMapsUrl(trimmed)) {
-        const resolved = await mapsApi.resolveUrl(trimmed)
+      const shareUrl = extractShareMapUrl(trimmed)
+      if (shareUrl) {
+        const resolved = await mapsApi.resolveUrl(shareUrl)
         if (resolved.lat && resolved.lng) {
-          onPick({
-            name: resolved.name || undefined,
-            address: resolved.address || undefined,
-            lat: String(resolved.lat),
-            lng: String(resolved.lng),
-            google_ftid: resolved.google_ftid || undefined,
-          })
+          onPick(shareResolveToResult(resolved, extractShareCardName(trimmed)))
           setQuery('')
           toast.success(t('places.urlResolved'))
           return
@@ -180,7 +175,7 @@ export default function PlPlaceSearch({ planner, locationBias, onPick, onResolvi
         place = (search.places?.[0] as MapsPlace | undefined) ?? null
       }
       if (place) {
-        applyPlace(place)
+        applyPlace(withFallbackName(place, suggestion.mainText))
       } else {
         setQuery(previousQuery)
         toast.error(t('places.mapsSearchError'))

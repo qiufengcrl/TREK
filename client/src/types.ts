@@ -126,6 +126,8 @@ export interface Settings {
   map_base_layer?: 'default' | 'satellite'
   /** CARTO basemaps watermark keyless tiles; the key is appended as ?key= (#2054). */
   carto_api_key?: string
+  /** 天地图 tk，拼进瓦片 URL；和 CARTO 一样会进浏览器。 */
+  tianditu_api_key?: string
   mapbox_access_token?: string
   mapbox_style?: string
   maplibre_style?: string
@@ -253,6 +255,7 @@ export interface AppConfig {
   oidc_display_name?: string
   oidc_only_mode?: boolean
   has_maps_key?: boolean
+  has_amap_key?: boolean
   allowed_file_types?: string
   timezone?: string
   /** When true, users without MFA cannot use the app until they enable it */

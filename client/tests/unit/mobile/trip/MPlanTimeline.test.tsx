@@ -110,6 +110,8 @@ function buildTl(over: Record<string, unknown> = {}): MPlanTimelineController {
     addTransport: vi.fn(),
     optimize: vi.fn(async () => undefined),
     exportGoogleMaps: vi.fn(),
+    exportAmap: vi.fn(),
+    exportCoMaps: vi.fn(),
     renameDay: vi.fn(),
     fullPlaceOf: vi.fn(() => undefined as Place | undefined),
     routeModeOptions: [
@@ -515,6 +517,7 @@ describe('MPlanTimeline', () => {
       fireEvent.click(screen.getByText('mobileTrip.addTransportShort'))
       fireEvent.click(screen.getByText('dayplan.optimize'))
       fireEvent.click(screen.getByText('mobileTrip.googleMaps'))
+      fireEvent.click(screen.getByText('planner.openAmap'))
 
       expect(mocks.tl.addPlace).toHaveBeenCalledTimes(1)
       expect(shell.openSheet).toHaveBeenCalledWith('note', { dayId: 2 })
@@ -522,6 +525,7 @@ describe('MPlanTimeline', () => {
       expect(mocks.tl.addTransport).toHaveBeenCalledTimes(1)
       expect(mocks.tl.optimize).toHaveBeenCalledTimes(1)
       expect(mocks.tl.exportGoogleMaps).toHaveBeenCalledTimes(1)
+      expect(mocks.tl.exportAmap).toHaveBeenCalledTimes(1)
     })
 
     it('FE-MOB-PLTL-034: the note tile is inert while no day is selected', () => {

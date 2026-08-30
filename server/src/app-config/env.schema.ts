@@ -139,6 +139,8 @@ export const envSchema = z.object({
   TREK_MANAGED: boolStr,
   PLACES_API_BASE: url,
   PLACES_API_KEY: anyString,
+  AMAP_API_KEY: anyString,
+  TIANDITU_API_KEY: anyString,
   MAPBOX_ACCESS_TOKEN: anyString,
   CARTO_API_KEY: anyString,
   DEMO_MODE: boolStr,

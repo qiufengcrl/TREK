@@ -85,6 +85,7 @@ const places: TranslationStrings = {
   'places.osmHint':
     'OpenStreetMap keresés aktív (képek, nyitvatartás és értékelések nélkül). Bővített adatokhoz add meg a Google API kulcsot a beállításokban.',
   'places.osmActive': 'Az OpenStreetMap van használatban. Egy Google API-kulcs értékeléseket és nyitvatartást ad hozzá.',
+  'places.amapActive': 'Using Amap (Gaode) for place search.',
   'places.details.title': 'Hely részletei',
   'places.details.empty': 'Válassz egy találatot a képekhez és a leíráshoz.',
   'places.details.loading': 'Részletek betöltése...',

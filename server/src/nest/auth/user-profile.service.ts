@@ -14,7 +14,10 @@ import {
   type InstanceApiKeyName,
 } from '../settings/instance-api-keys';
 import { SEARCH_TEXT_FIELD_MASK } from '../maps/maps.helpers';
+import { probeAmapKey } from '../geo/amap.client';
 import { User } from '../../types';
+
+export type ValidateKeyOnly = 'maps' | 'weather' | 'amap';
 
 /**
  * The account a user administers about themselves: display settings, avatar,
@@ -96,9 +99,15 @@ export class UserProfileService {
     skipped: string[] = [],
   ): string[] {
     const norm = (v: unknown) => String(v ?? '').trim();
-    return (['maps_api_key', 'openweather_api_key', 'unsplash_api_key'] as const).filter(
+    const fromColumns = (['maps_api_key', 'openweather_api_key', 'unsplash_api_key'] as const).filter(
       (name) => body[name] !== undefined && !skipped.includes(name) && norm(body[name]) !== norm(this.storedKeyPlaintext(name, current, isAdmin))
     );
+    const amapChanged =
+      body.amap_api_key !== undefined &&
+      !skipped.includes('amap_api_key') &&
+      isAdmin &&
+      norm(body.amap_api_key) !== norm(readInstanceApiKey(this.db, 'amap_api_key') ?? '');
+    return amapChanged ? [...fromColumns, 'amap_api_key'] : [...fromColumns];
   }
 
   /**
@@ -135,7 +144,7 @@ export class UserProfileService {
   }
 
   updateApiKeys(userId: number, rawBody: unknown) {
-    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string };
+    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string; amap_api_key?: string };
     const { blocked } = splitManagedKeys(body, this.managed);
     for (const key of blocked) delete body[key as keyof typeof body];
     const current = this.currentKeys(userId);
@@ -173,7 +182,7 @@ export class UserProfileService {
     userId: number,
     rawBody: unknown
   ): { error?: string; status?: number; success?: boolean; user?: Record<string, unknown>; changedKeys?: string[] } {
-    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string; username?: string; email?: string };
+    const body = rawBody as { maps_api_key?: string; openweather_api_key?: string; unsplash_api_key?: string; amap_api_key?: string; username?: string; email?: string };
     const { maps_api_key, openweather_api_key, unsplash_api_key, username, email } = body;
 
     if (username !== undefined) {
@@ -224,6 +233,10 @@ export class UserProfileService {
         this.db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, ...params);
         if (!keyLocked) this.mirrorInstanceKeys(body, isAdmin);
       });
+    } else if (!keyLocked) {
+      // Amap has no users column — a body that only carries amap_api_key still
+      // has to reach the instance row.
+      this.mirrorInstanceKeys(body, isAdmin);
     }
 
     const updated = this.db.get<Pick<User, 'id' | 'username' | 'email' | 'role' | 'maps_api_key' | 'openweather_api_key' | 'unsplash_api_key' | 'avatar' | 'mfa_enabled'>>(
@@ -258,6 +271,7 @@ export class UserProfileService {
           maps_api_key: null,
           openweather_api_key: null,
           unsplash_api_key: null,
+          amap_api_key: null,
           managed_keys: [...MANAGED_LOCKED_PROFILE_KEYS],
         },
       };
@@ -272,6 +286,7 @@ export class UserProfileService {
         maps_api_key: readInstanceApiKey(this.db, 'maps_api_key') ?? decrypt_api_key(user.maps_api_key),
         openweather_api_key: decrypt_api_key(user.openweather_api_key),
         unsplash_api_key: readInstanceApiKey(this.db, 'unsplash_api_key') ?? decrypt_api_key(user.unsplash_api_key),
+        amap_api_key: readInstanceApiKey(this.db, 'amap_api_key'),
       },
     };
   }
@@ -325,13 +340,15 @@ export class UserProfileService {
   // Key validation
   // -------------------------------------------------------------------------
 
-  async validateKeys(userId: number): Promise<{ error?: string; status?: number; maps: boolean; weather: boolean; maps_details: null | { ok: boolean; status: number | null; status_text: string | null; error_message: string | null; error_status: string | null; error_raw: string | null } }> {
+  async validateKeys(userId: number, only?: ValidateKeyOnly): Promise<{ error?: string; status?: number; maps: boolean; weather: boolean; amap: boolean; maps_details: null | { ok: boolean; status: number | null; status_text: string | null; error_message: string | null; error_status: string | null; error_raw: string | null } }> {
     const user = this.db.get<Pick<User, 'role' | 'openweather_api_key'>>('SELECT role, openweather_api_key FROM users WHERE id = ?', userId);
-    if (user?.role !== 'admin') return { error: 'Admin access required', status: 403, maps: false, weather: false, maps_details: null };
+    if (user?.role !== 'admin') return { error: 'Admin access required', status: 403, maps: false, weather: false, amap: false, maps_details: null };
+    const probe = (name: ValidateKeyOnly) => !only || only === name;
 
     const result: {
       maps: boolean;
       weather: boolean;
+      amap: boolean;
       maps_details: null | {
         ok: boolean;
         status: number | null;
@@ -340,13 +357,13 @@ export class UserProfileService {
         error_status: string | null;
         error_raw: string | null;
       };
-    } = { maps: false, weather: false, maps_details: null };
+    } = { maps: false, weather: false, amap: false, maps_details: null };
 
     // The key a search would actually use, not the one in this admin's column:
     // testing a value nothing resolves to is how "the panel says the key is
     // fine" and "every search 403s" coexisted (#1939).
     const { key: maps_api_key } = resolveApiKey(this.db, 'maps_api_key', userId, readEnv().maps.placesApiKey);
-    if (maps_api_key) {
+    if (probe('maps') && maps_api_key) {
       try {
         // Same Referer as maps.service googleFetch — without it, keys with an
         // HTTP-referrer restriction fail validation while real requests succeed.
@@ -364,6 +381,7 @@ export class UserProfileService {
               'X-Goog-FieldMask': SEARCH_TEXT_FIELD_MASK,
             },
             body: JSON.stringify({ textQuery: 'test' }),
+            signal: AbortSignal.timeout(8_000),
           }
         );
         result.maps = mapsRes.status === 200;
@@ -397,7 +415,7 @@ export class UserProfileService {
     }
 
     const openweather_api_key = decrypt_api_key(user.openweather_api_key);
-    if (openweather_api_key) {
+    if (probe('weather') && openweather_api_key) {
       try {
         const weatherRes = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?q=London&appid=${openweather_api_key}`
@@ -406,6 +424,11 @@ export class UserProfileService {
       } catch {
         result.weather = false;
       }
+    }
+
+    const { key: amap_api_key } = resolveApiKey(this.db, 'amap_api_key', userId, readEnv().maps.amapApiKey);
+    if (probe('amap') && amap_api_key) {
+      result.amap = await probeAmapKey(amap_api_key);
     }
 
     return result;

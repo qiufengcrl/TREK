@@ -134,6 +134,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Cần thiết cho tìm kiếm địa điểm. Truy cập tại console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Nếu không có khóa API, OpenStreetMap sẽ được sử dụng để tìm kiếm địa điểm. Với khóa Google API, bạn cũng có thể tải ảnh, xếp hạng và giờ mở cửa. Nhận một cái tại console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Khuyến khích',
   'admin.weatherKey': 'OpenWeatherMap API Key',
   'admin.weatherKeyHint': 'Đối với dữ liệu thời tiết. Miễn phí tại openweathermap.org',
@@ -203,6 +207,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Khóa CARTO được chia sẻ',
   'admin.defaultSettings.cartoKeyHint':
     'Được sử dụng cho mọi người dùng chưa nhập khóa của riêng họ, vì vậy toàn bộ phiên bản nhận được ô bản đồ CARTO không có hình mờ. Được lưu trữ dưới dạng mã hóa.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.tabs.templates': 'Mẫu đóng gói',
   'admin.packingTemplates.title': 'Mẫu đóng gói',
   'admin.packingTemplates.subtitle': 'Tạo danh sách đóng gói có thể tái sử dụng cho chuyến đi của bạn',

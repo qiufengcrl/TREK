@@ -14,7 +14,7 @@ import { useToast } from '../shared/Toast'
 import { Search, Paperclip, X, AlertTriangle, Loader2, Plus } from 'lucide-react'
 import { useTranslation } from '../../i18n'
 import CustomTimePicker from '../shared/CustomTimePicker'
-import { DEFAULT_FORM, isGoogleMapsUrl, mergeResult, type PlaceFormData, type ResultField } from './PlaceFormModal.helpers'
+import { DEFAULT_FORM, extractShareCardName, extractShareMapUrl, mergeResult, shareResolveToResult, withFallbackName, type PlaceFormData, type ResultField } from './PlaceFormModal.helpers'
 import { getApiErrorMessage } from '../../utils/apiError'
 import { BookingCostsSection } from './BookingCostsSection'
 import type { BookingExpenseRequest } from './BookingCostsSection.types'
@@ -112,7 +112,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
   const placesSessionRef = useRef(new PlacesSession())
   const toast = useToast()
   const { t, language, locale } = useTranslation()
-  const { hasMapsKey, placesEnrichEnabled } = useAuthStore()
+  const { hasMapsKey, hasAmapKey, placesEnrichEnabled } = useAuthStore()
   const can = useCanDo()
   const timeFormat = useSettingsStore((s) => s.settings.time_format) || '24h'
   const tripObj = useTripStore((s) => s.trip)
@@ -239,7 +239,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
 
   // Autocomplete fetch — aborts any in-flight request before starting a new one
   const fetchSuggestions = useCallback(async (query: string) => {
-    if (query.length < 2 || isGoogleMapsUrl(query)) {
+    if (query.length < 2 || extractShareMapUrl(query)) {
       setAcSuggestions([])
       setAcHighlight(-1)
       return
@@ -264,7 +264,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     if (acDebounceRef.current) clearTimeout(acDebounceRef.current)
 
     const trimmed = mapsSearch.trim()
-    if (trimmed.length < 2 || isGoogleMapsUrl(trimmed)) {
+    if (trimmed.length < 2 || extractShareMapUrl(trimmed)) {
       setAcSuggestions([])
       setAcHighlight(-1)
       placesSessionRef.current.end()
@@ -284,38 +284,6 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleMapsSearch = async () => {
-    if (!mapsSearch.trim()) return
-    setIsSearchingMaps(true)
-    try {
-      // Detect Google Maps URLs and resolve them directly
-      const trimmed = mapsSearch.trim()
-      if (isGoogleMapsUrl(trimmed)) {
-        const resolved = await mapsApi.resolveUrl(trimmed)
-        if (resolved.lat && resolved.lng) {
-          setForm(prev => ({
-            ...prev,
-            name: resolved.name || prev.name,
-            address: resolved.address || prev.address,
-            lat: String(resolved.lat),
-            lng: String(resolved.lng),
-            google_ftid: resolved.google_ftid || prev.google_ftid,
-          }))
-          setMapsResults([])
-          setMapsSearch('')
-          toast.success(t('places.urlResolved'))
-          return
-        }
-      }
-      const result = await mapsApi.search(mapsSearch, language)
-      setMapsResults(result.places || [])
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, t('places.mapsSearchError')))
-    } finally {
-      setIsSearchingMaps(false)
-    }
-  }
-
   const handleSelectMapsResult = (result) => {
     setForm(prev => mergeResult(prev, result, autoFilledRef.current))
     // The one point every pick flows through, so the detail column hangs here.
@@ -324,7 +292,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     const lng = Number(result.lng)
     if (Number.isFinite(lat) && Number.isFinite(lng)) {
       setDetailsSelection({
-        placeId: result.google_place_id || result.osm_id || undefined,
+        placeId: result.google_place_id || result.osm_id || result.amap_id || undefined,
         lat,
         lng,
         name: result.name || '',
@@ -336,6 +304,29 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     }
     setMapsResults([])
     setMapsSearch('')
+  }
+
+  const handleMapsSearch = async () => {
+    if (!mapsSearch.trim()) return
+    setIsSearchingMaps(true)
+    try {
+      const trimmed = mapsSearch.trim()
+      const shareUrl = extractShareMapUrl(trimmed)
+      if (shareUrl) {
+        const resolved = await mapsApi.resolveUrl(shareUrl)
+        if (resolved.lat && resolved.lng) {
+          handleSelectMapsResult(shareResolveToResult(resolved, extractShareCardName(trimmed)))
+          toast.success(t('places.urlResolved'))
+          return
+        }
+      }
+      const result = await mapsApi.search(mapsSearch, language)
+      setMapsResults(result.places || [])
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, t('places.mapsSearchError')))
+    } finally {
+      setIsSearchingMaps(false)
+    }
   }
 
   const handleSelectSuggestion = async (suggestion: { placeId: string; mainText: string; secondaryText: string }) => {
@@ -369,7 +360,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
         place = search.places?.[0] ?? null
       }
       if (place) {
-        handleSelectMapsResult(place)
+        handleSelectMapsResult(withFallbackName(place, suggestion.mainText))
       } else {
         setMapsSearch(previousSearch)
         toast.error(t('places.mapsSearchError'))
@@ -544,6 +535,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     locale,
     timeFormat,
     hasMapsKey,
+    hasAmapKey,
     placesEnrichEnabled,
     can,
     tripObj,
@@ -614,6 +606,7 @@ export default function PlaceFormModal(props: PlaceFormModalProps) {
     t,
     language,
     hasMapsKey,
+    hasAmapKey,
     placesEnrichEnabled,
     can,
     tripObj,
@@ -694,11 +687,15 @@ export default function PlaceFormModal(props: PlaceFormModalProps) {
       <form onSubmit={handleSubmit} className={twoColumn || showDetails ? 'flex-1 min-w-0 space-y-3' : 'space-y-3'} onPaste={handlePaste}>
         {/* Place Search */}
         <div className="bg-surface-secondary rounded-xl p-3 border border-edge">
-          {!hasMapsKey && (
+          {hasAmapKey ? (
+            <p className="mb-2 text-xs text-content-faint">
+              {t('places.amapActive')}
+            </p>
+          ) : !hasMapsKey ? (
             <p className="mb-2 text-xs text-content-faint">
               {t('places.osmActive')}
             </p>
-          )}
+          ) : null}
           <div className="relative">
             <div className="flex gap-2">
               <input

@@ -126,6 +126,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': '場所検索に必要。console.cloud.google.com で取得',
   'admin.mapsKeyHintLong':
     'APIキーなしではOpenStreetMapを使用します。Google APIキーがあれば写真、評価、営業時間も表示できます。',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': '推奨',
   'admin.weatherKey': 'OpenWeatherMap APIキー',
   'admin.weatherKeyHint': '天気データ用。openweathermap.org で無料',
@@ -668,6 +672,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': '共有 CARTO キー',
   'admin.defaultSettings.cartoKeyHint':
     '自分のキーを入力していないすべてのユーザーに使用されます。これによりインスタンス全体で透かしのない CARTO タイルを利用できます。暗号化して保存されます。',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

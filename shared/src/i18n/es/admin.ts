@@ -93,6 +93,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Obligatoria para buscar lugares. Consíguela en console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Sin una clave API, la búsqueda de lugares usa OpenStreetMap. Con una clave de Google también se pueden cargar fotos, valoraciones y horarios de apertura. Consíguela en console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Recomendado',
   'admin.weatherKey': 'Clave API de OpenWeatherMap',
   'admin.weatherKeyHint': 'Para datos meteorológicos. Gratis en openweathermap.org',
@@ -710,6 +714,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Clave de CARTO compartida',
   'admin.defaultSettings.cartoKeyHint':
     'Se usa para cada usuario que no haya introducido su propia clave, de modo que toda la instancia obtenga teselas de CARTO sin marca de agua. Se almacena cifrada.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

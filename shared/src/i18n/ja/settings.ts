@@ -38,6 +38,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'carto.com ベースマップ API キー',
   'settings.mapCartoKeyMissing':
     'このテンプレートは CARTO のベースマップです。キーがないと CARTO はすべてのタイルに "API KEY REQUIRED" を焼き込みます。 キーを入力するまで、TREK は既定のベースマップを表示します。',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': '地図スタイル',
   'settings.mapStylePlaceholder': 'Mapboxスタイルを選択',
   'settings.mapStyleHint': 'プリセットまたは mapbox://styles/USER/ID のURL',

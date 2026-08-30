@@ -303,7 +303,8 @@ export const authApi = {
   deleteAvatar: () => apiClient.delete('/auth/avatar').then(r => r.data),
   getAppConfig: () => apiClient.get('/auth/app-config').then(r => r.data),
   updateAppSettings: (data: Record<string, unknown>) => apiClient.put('/auth/app-settings', data).then(r => r.data),
-  validateKeys: () => apiClient.get('/auth/validate-keys').then(r => r.data),
+  validateKeys: (only?: 'maps' | 'weather' | 'amap') =>
+    apiClient.get('/auth/validate-keys', { params: only ? { only } : undefined }).then(r => r.data),
   travelStats: () => apiClient.get('/auth/travel-stats').then(r => r.data),
   changePassword: (data: ChangePasswordRequest) => apiClient.put('/auth/me/password', data).then(r => r.data),
   forgotPassword: (data: ForgotPasswordRequest) => apiClient.post('/auth/forgot-password', data).then(r => r.data as { ok: true }),

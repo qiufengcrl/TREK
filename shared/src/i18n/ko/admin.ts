@@ -131,6 +131,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': '장소 검색에 필요합니다. console.cloud.google.com에서 발급',
   'admin.mapsKeyHintLong':
     'API 키 없이는 장소 검색에 OpenStreetMap이 사용됩니다. Google API 키가 있으면 사진, 평점, 영업 시간도 불러올 수 있습니다. console.cloud.google.com에서 발급하세요.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': '권장',
   'admin.weatherKey': 'OpenWeatherMap API 키',
   'admin.weatherKeyHint': '날씨 데이터용. openweathermap.org에서 무료 발급',
@@ -665,6 +669,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': '공유 CARTO 키',
   'admin.defaultSettings.cartoKeyHint':
     '자신의 키를 입력하지 않은 모든 사용자에게 사용됩니다. 이렇게 하면 인스턴스 전체에서 워터마크 없는 CARTO 타일을 사용할 수 있습니다. 암호화하여 저장됩니다.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

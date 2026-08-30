@@ -383,8 +383,17 @@ describe('AuthController (authenticated)', () => {
 
   it('validate-keys maps error, else returns the maps/weather payload', async () => {
     expect(await thrownAsync(() => ac(asvc({}), rl(), {}, { validateKeys: vi.fn().mockResolvedValue({ error: 'fail', status: 502 }) }).validateKeys(user))).toEqual({ status: 502, body: { error: 'fail' } });
-    const ok = ac(asvc({}), rl(), {}, { validateKeys: vi.fn().mockResolvedValue({ maps: true, weather: false, maps_details: { ok: 1 } }) });
-    expect(await ok.validateKeys(user)).toEqual({ maps: true, weather: false, maps_details: { ok: 1 } });
+    const ok = ac(asvc({}), rl(), {}, { validateKeys: vi.fn().mockResolvedValue({ maps: true, weather: false, amap: true, maps_details: { ok: 1 } }) });
+    expect(await ok.validateKeys(user)).toEqual({ maps: true, weather: false, amap: true, maps_details: { ok: 1 } });
+  });
+
+  it('validate-keys forwards only= to the profile probe and ignores unknown values', async () => {
+    const validateKeys = vi.fn().mockResolvedValue({ maps: false, weather: false, amap: true, maps_details: null });
+    const ctl = ac(asvc({}), rl(), {}, { validateKeys });
+    expect(await ctl.validateKeys(user, 'amap')).toEqual({ maps: false, weather: false, amap: true, maps_details: null });
+    expect(validateKeys).toHaveBeenCalledWith(1, 'amap');
+    await ctl.validateKeys(user, 'nope');
+    expect(validateKeys).toHaveBeenLastCalledWith(1, undefined);
   });
 
   it('app-settings get maps error, else returns data; put maps error, else audits', () => {

@@ -133,6 +133,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Required for place search. Get at console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Without an API key, OpenStreetMap is used for place search. With a Google API key, photos, ratings, and opening hours can be loaded as well. Get one at console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Recommended',
   'admin.weatherKey': 'OpenWeatherMap API Key',
   'admin.weatherKeyHint': 'For weather data. Free at openweathermap.org',
@@ -200,6 +204,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Shared CARTO key',
   'admin.defaultSettings.cartoKeyHint':
     'Used for every user who has not entered their own key, so the whole instance gets CARTO tiles without a watermark. Stored encrypted.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets 天地图 tiles. Stored encrypted.',
   'admin.tabs.templates': 'Packing Templates',
   'admin.packingTemplates.title': 'Packing Templates',
   'admin.packingTemplates.subtitle': 'Create reusable packing lists for your trips',

@@ -6,7 +6,7 @@ import { useToast } from '../../../components/shared/Toast'
 import { MapView } from '../../../components/Map/MapView'
 import { SYMBOLS, currenciesWith } from '../../../components/Budget/BudgetPanel.constants'
 import { getApiErrorMessage, type DistanceUnit, type Place } from '../../../types'
-import { normalizeTileUrl, withTileApiKey } from '../../../utils/tileUrl'
+import { normalizeTileUrl, withTiandituKey, withTileApiKey } from '../../../utils/tileUrl'
 import {
   MAPBOX_DEFAULT_STYLE,
   defaultStyleForProvider,
@@ -35,6 +35,7 @@ const MAP_PRESETS = [
   { name: 'CartoDB Light', url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' },
   { name: 'CartoDB Dark', url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' },
   { name: 'Stadia Smooth', url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png' },
+  { name: 'Tianditu (天地图)', url: 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}' },
 ]
 
 type Defaults = {
@@ -46,6 +47,7 @@ type Defaults = {
   blur_booking_codes?: boolean
   map_tile_url?: string
   carto_api_key?: string
+  tianditu_api_key?: string
   map_provider?: string
   mapbox_access_token?: string
   mapbox_style?: string
@@ -78,6 +80,7 @@ export default function MAdminDefaultUserSettings(): React.ReactElement {
   const managed = useAuthStore((s) => s.managed)
   const [mapboxToken, setMapboxToken] = useState('')
   const [cartoKey, setCartoKey] = useState('')
+  const [tiandituKey, setTiandituKey] = useState('')
   const [mapboxStyle, setMapboxStyle] = useState('')
   const [currencyOpen, setCurrencyOpen] = useState(false)
   const [presetOpen, setPresetOpen] = useState(false)
@@ -90,6 +93,7 @@ export default function MAdminDefaultUserSettings(): React.ReactElement {
       setMapTileUrl(normalizeTileUrl(data.map_tile_url || ''))
       setMapboxToken(data.mapbox_access_token || '')
       setCartoKey(data.carto_api_key || '')
+      setTiandituKey(data.tianditu_api_key || '')
       setMapboxStyle(provider === 'leaflet' ? (data.mapbox_style || '') : styleForProvider(provider, provider === 'maplibre-gl' ? data.maplibre_style : data.mapbox_style))
       setLoaded(true)
     }).catch(() => setLoaded(true))
@@ -112,6 +116,7 @@ export default function MAdminDefaultUserSettings(): React.ReactElement {
       if (key === 'map_tile_url') setMapTileUrl('')
       if (key === 'mapbox_access_token') setMapboxToken('')
       if (key === 'carto_api_key') setCartoKey('')
+      if (key === 'tianditu_api_key') setTiandituKey('')
       if (key === 'mapbox_style' || key === 'maplibre_style') {
         const provider = normalizeProvider(defaults.map_provider)
         setMapboxStyle(provider === 'leaflet' ? '' : defaultStyleForProvider(provider))
@@ -317,6 +322,22 @@ export default function MAdminDefaultUserSettings(): React.ReactElement {
             </MAdminField>
           )}
 
+          {!managed && (
+            <MAdminField
+              label={<>{t('admin.defaultSettings.tiandituKey')} <ResetButton field="tianditu_api_key" /></>}
+              hint={t('admin.defaultSettings.tiandituKeyHint')}
+            >
+              <MAdminInput
+                type="text"
+                value={tiandituKey}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTiandituKey(e.target.value)}
+                onBlur={() => save({ tianditu_api_key: tiandituKey })}
+                spellCheck={false}
+                autoComplete="off"
+              />
+            </MAdminField>
+          )}
+
           {/* Live tile preview */}
           <div className="relative h-[200px] w-full overflow-hidden rounded-xl">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -333,7 +354,7 @@ export default function MAdminDefaultUserSettings(): React.ReactElement {
               zoom: 10,
               // As on the other three previews: the field holds what is being
               // edited, so the key goes back on before the template resolves.
-              tileUrl: withTileApiKey(mapTileUrl, cartoKey),
+              tileUrl: withTiandituKey(withTileApiKey(mapTileUrl, cartoKey), tiandituKey),
               fitKey: null,
               dayOrderMap: [],
               leftWidth: 0,

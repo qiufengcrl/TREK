@@ -93,6 +93,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Необхідний для пошуку місць. Отримайте на console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Без API-ключа для пошуку місць використовується OpenStreetMap. З ключем Google API можна завантажувати фото, рейтинги та години роботи. Отримайте ключ на console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Рекомендується',
   'admin.weatherKey': 'API-ключ OpenWeatherMap',
   'admin.weatherKeyHint': 'Для даних про погоду. Безкоштовно на openweathermap.org',
@@ -699,6 +703,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Спільний ключ CARTO',
   'admin.defaultSettings.cartoKeyHint':
     'Використовується для кожного користувача, який не ввів власний ключ, щоб увесь екземпляр отримував плитки CARTO без водяного знака. Зберігається в зашифрованому вигляді.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

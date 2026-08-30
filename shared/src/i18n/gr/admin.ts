@@ -138,6 +138,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Απαιτείται για αναζήτηση τόπων. Λάβετε το από console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'Χωρίς κλειδί API, χρησιμοποιείται το OpenStreetMap για αναζήτηση τόπων. Με κλειδί Google API, μπορούν επίσης να φορτωθούν φωτογραφίες, βαθμολογίες και ώρες λειτουργίας. Λάβετε ένα στο console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Συνιστάται',
   'admin.weatherKey': 'OpenWeatherMap API Key',
   'admin.weatherKeyHint': 'Για δεδομένα καιρού. Δωρεάν στο openweathermap.org',
@@ -718,6 +722,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Κοινόχρηστο κλειδί CARTO',
   'admin.defaultSettings.cartoKeyHint':
     'Χρησιμοποιείται για κάθε χρήστη που δεν έχει εισαγάγει το δικό του κλειδί, έτσι ολόκληρη η εγκατάσταση λαμβάνει πλακίδια CARTO χωρίς υδατογράφημα. Αποθηκεύεται κρυπτογραφημένο.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

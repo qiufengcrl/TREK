@@ -14,6 +14,7 @@ export const ENCRYPTED_SETTING_KEYS = new Set([
   'ntfy_token',
   'mapbox_access_token',
   'carto_api_key',
+  'tianditu_api_key',
   'llm_api_key',
 ]);
 // Encrypted keys that are masked (••••••••) when returned to the client.
@@ -34,6 +35,7 @@ export const DEFAULTABLE_USER_SETTING_KEYS = [
   // the key is per-instance rather than per-person: defaultable so one admin
   // value clears the watermark for everybody at once.
   'carto_api_key',
+  'tianditu_api_key',
   // Instance-wide GL map defaults: admins can set Mapbox token/style or
   // tokenless MapLibre/OpenFreeMap style defaults for new users (#920).
   'map_provider',
@@ -236,6 +238,9 @@ export class SettingsService {
     // renderer the user wants.
     if (readEnv().managed.enabled && managedMaps.cartoKey) {
       merged.carto_api_key = managedMaps.cartoKey;
+    }
+    if (managedMaps.tiandituApiKey && !merged.tianditu_api_key) {
+      merged.tianditu_api_key = managedMaps.tiandituApiKey;
     }
 
     return merged;

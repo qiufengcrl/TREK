@@ -135,6 +135,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Yer arama için gereklidir. console.cloud.google.com adresinden erişin',
   'admin.mapsKeyHintLong':
     'API anahtarı olmadan OpenStreetMap yer arama için kullanılır. Bir Google API anahtarıyla fotoğraflar, derecelendirmeler ve açılış saatleri de yüklenebilir. console.cloud.google.com adresinden bir tane edinin.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Tavsiye edilen',
   'admin.weatherKey': 'OpenWeatherMap API Anahtarı',
   'admin.weatherKeyHint': "Hava durumu verileri için. openweathermap.org'da ücretsiz",
@@ -705,6 +709,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Paylaşılan CARTO anahtarı',
   'admin.defaultSettings.cartoKeyHint':
     'Kendi anahtarını girmemiş her kullanıcı için kullanılır, böylece tüm örnek filigransız CARTO döşemeleri alır. Şifrelenmiş olarak saklanır.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

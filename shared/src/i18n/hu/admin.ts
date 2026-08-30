@@ -92,6 +92,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': 'Helykereséshez szükséges. Létrehozás: console.cloud.google.com',
   'admin.mapsKeyHintLong':
     'API kulcs nélkül az OpenStreetMap szolgál helykeresésre. Google API kulccsal képek, értékelések és nyitvatartás is betölthetők. Létrehozás: console.cloud.google.com.',
+  'admin.amapKey': 'Amap (Gaode) Web API Key',
+  'admin.amapKeyHint': 'For place search in China. Get at console.amap.com',
+  'admin.amapKeyHintLong':
+    'When set, TREK tries Amap first, then Google (if configured), then OpenStreetMap. Create a Web service key at console.amap.com. Coordinates are converted to WGS-84 so pins line up on OSM tiles.',
   'admin.recommended': 'Ajánlott',
   'admin.weatherKey': 'OpenWeatherMap API kulcs',
   'admin.weatherKeyHint': 'Időjárás adatokhoz. Ingyenes: openweathermap.org',
@@ -708,6 +712,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': 'Megosztott CARTO-kulcs',
   'admin.defaultSettings.cartoKeyHint':
     'Minden olyan felhasználóhoz használatos, aki nem adta meg a saját kulcsát, így az egész példány vízjel nélküli CARTO-csempéket kap. Titkosítva tárolódik.',
+  'admin.defaultSettings.tiandituKey': 'Shared Tianditu key',
+  'admin.defaultSettings.tiandituKeyHint':
+    'Used for every user who has not entered their own tk, so the whole instance gets Tianditu tiles. Stored encrypted.',
   'admin.group.users': 'Users',
   'admin.group.config': 'Configuration',
   'admin.group.integration': 'Integrations',

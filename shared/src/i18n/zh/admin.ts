@@ -91,6 +91,10 @@ const admin: TranslationStrings = {
   'admin.mapsKeyHint': '用于地点搜索。在 console.cloud.google.com 获取',
   'admin.mapsKeyHintLong':
     '没有 API 密钥时，使用 OpenStreetMap 搜索地点。有了 Google API 密钥，还可以加载照片、评分和营业时间。在 console.cloud.google.com 获取。',
+  'admin.amapKey': '高德地图 Web 服务密钥',
+  'admin.amapKeyHint': '用于国内地点搜索。在 console.amap.com 申请',
+  'admin.amapKeyHintLong':
+    '填写后优先用高德搜索地点；空结果或出错再回退到 Google（如已配置）和 OpenStreetMap。请在 console.amap.com 创建「Web 服务」类型 Key。坐标会转换成 WGS-84，以便钉在 OSM 底图上。',
   'admin.recommended': '推荐',
   'admin.weatherKey': 'OpenWeatherMap API 密钥',
   'admin.weatherKeyHint': '用于天气数据。在 openweathermap.org 免费获取',
@@ -641,6 +645,9 @@ const admin: TranslationStrings = {
   'admin.defaultSettings.cartoKey': '共享 CARTO 密钥',
   'admin.defaultSettings.cartoKeyHint':
     '用于所有未输入自己密钥的用户，这样整个实例都能获得无水印的 CARTO 瓦片。以加密方式存储。',
+  'admin.defaultSettings.tiandituKey': '共享天地图密钥',
+  'admin.defaultSettings.tiandituKeyHint':
+    '用于所有未输入自己 tk 的用户，这样整个实例都能加载天地图瓦片。以加密方式存储。',
   'admin.group.users': '用户',
   'admin.group.config': '配置',
   'admin.group.integration': '集成',

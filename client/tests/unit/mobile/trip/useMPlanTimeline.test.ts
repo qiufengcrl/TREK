@@ -590,6 +590,16 @@ describe('useMPlanTimeline', () => {
     )
   })
 
+  it('FE-MOB-PLTL-037b: exports the day as an Amap route', async () => {
+    const { result } = await renderTimeline(makePlanner())
+    act(() => { result.current.exportAmap() })
+    expect(window.open).toHaveBeenCalledWith(
+      expect.stringContaining('uri.amap.com'),
+      '_blank',
+      'noopener,noreferrer',
+    )
+  })
+
   it('FE-MOB-PLTL-038: opens nothing when the day has no located stops', async () => {
     const vague = buildAssignment({
       id: 14, day_id: 2, order_index: 0, place_id: 104,

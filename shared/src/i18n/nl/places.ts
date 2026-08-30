@@ -85,6 +85,7 @@ const places: TranslationStrings = {
   'places.osmHint':
     "Zoeken via OpenStreetMap (geen foto's, openingstijden of beoordelingen). Voeg een Google API-sleutel toe in instellingen voor volledige details.",
   'places.osmActive': 'OpenStreetMap wordt gebruikt. Een Google API-sleutel voegt beoordelingen en openingstijden toe.',
+  'places.amapActive': 'Using Amap (Gaode) for place search.',
   'places.details.title': 'Plaatsdetails',
   'places.details.empty': 'Kies een zoekresultaat om afbeeldingen en een beschrijving te zien.',
   'places.details.loading': 'Details laden...',

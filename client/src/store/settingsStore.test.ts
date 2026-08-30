@@ -36,6 +36,10 @@ describe('settings defaults', () => {
   it('SETTINGS-DEFAULTS-003: no CARTO key is shipped, so the field starts empty instead of undefined', () => {
     expect(DEFAULT_SETTINGS.carto_api_key).toBe('')
   })
+
+  it('SETTINGS-DEFAULTS-004: no Tianditu tk is shipped, so the field starts empty instead of undefined', () => {
+    expect(DEFAULT_SETTINGS.tianditu_api_key).toBe('')
+  })
 })
 
 // The CARTO key lives in its own setting and is appended at render time (#2054). Two things
@@ -88,5 +92,10 @@ describe('settings tile template hygiene', () => {
     vi.mocked(clearTileCache).mockClear()
     await useSettingsStore.getState().updateSettings({ map_tile_url: '' })
     expect(clearTileCache).not.toHaveBeenCalled()
+  })
+
+  it('SETTINGS-TILE-006: changing the Tianditu tk drops the tile cache', async () => {
+    await useSettingsStore.getState().updateSetting('tianditu_api_key', 'tk-fresh')
+    expect(clearTileCache).toHaveBeenCalledTimes(1)
   })
 })

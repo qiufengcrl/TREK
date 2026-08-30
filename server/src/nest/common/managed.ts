@@ -74,9 +74,11 @@ export function isManagedBlocked(env: RuntimeEnvService): boolean {
  * carto_api_key is the same shape, injected on read and public in the browser,
  * and it is the operator's for one more reason: the key is registered to
  * whoever runs the instance, and CARTO's terms hold that account answerable for
- * the tiles it fetches.
+ * the tiles it fetches. tianditu_api_key is the same idea for 天地图 tiles.
+ * amap_api_key is instance-wide (no users column) and billed to the operator.
  */
 export const MANAGED_LOCKED_SETTING_KEYS = [
+  'amap_api_key',
   'carto_api_key',
   'llm_api_key',
   'llm_base_url',
@@ -94,17 +96,20 @@ export const MANAGED_LOCKED_SETTING_KEYS = [
   'smtp_port',
   'smtp_skip_tls_verify',
   'smtp_user',
+  'tianditu_api_key',
   'unsplash_api_key',
   'webauthn_origins',
   'webauthn_rp_id',
 ] as const;
 
 /**
- * The locked names that are columns on `users` rather than settings keys, so
- * the assignment test can tell "deliberately outside both source lists" from
- * "somebody removed a key and left the assignment behind".
+ * Locked credential names that are not admin-settings / defaultable-user keys:
+ * the three `users` columns, plus instance-only `amap_api_key` (no users column).
+ * The assignment test uses this list to tell "deliberately outside both source
+ * lists" from "somebody removed a key and left the assignment behind".
  */
 export const MANAGED_LOCKED_PROFILE_KEYS = [
+  'amap_api_key',
   'maps_api_key',
   'openweather_api_key',
   'unsplash_api_key',

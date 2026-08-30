@@ -1,5 +1,5 @@
 import {
-  generateCoMapsUrl, generateGoogleMapsUrl, optimizeRoute,
+  generateAmapUrl, generateCoMapsUrl, generateGoogleMapsUrl, optimizeRoute,
   type NamedWaypoint, type RouteProfileKey,
 } from '../../../../components/Map/RouteCalculator'
 import {
@@ -92,6 +92,19 @@ export function dayGoogleMapsUrl(
   bookendFromAccommodation: boolean,
 ): string | null {
   return generateGoogleMapsUrl(
+    dayExportStops(day, days, dayAssignments, accommodations, bookendFromAccommodation),
+  ) || null
+}
+
+/** 同一天的点交给高德 App / 网页导航。 */
+export function dayAmapUrl(
+  day: Day,
+  days: Day[],
+  dayAssignments: Assignment[],
+  accommodations: Accommodation[],
+  bookendFromAccommodation: boolean,
+): string | null {
+  return generateAmapUrl(
     dayExportStops(day, days, dayAssignments, accommodations, bookendFromAccommodation),
   ) || null
 }
