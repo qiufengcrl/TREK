@@ -196,6 +196,7 @@ describe('MSettingsMap', () => {
       map_tile_url: OSM_URL,
       mapbox_access_token: '',
       carto_api_key: '',
+      tianditu_api_key: '',
       mapbox_style: 'mapbox://styles/mapbox/dark-v11',
       mapbox_3d_enabled: true,
       mapbox_quality_mode: false,

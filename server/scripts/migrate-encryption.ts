@@ -276,7 +276,7 @@ async function main() {
     // --- app_settings: oidc_client_secret, smtp_pass, admin_webhook_url, admin_ntfy_token,
     // plus the instance-wide provider keys (#1939) ---
     //
-    // The last two mirror INSTANCE_API_KEY_NAMES in
+    // The last three mirror INSTANCE_API_KEY_NAMES in
     // src/nest/settings/instance-api-keys.ts. Spelled out rather than imported,
     // because that module pulls in DatabaseService and this script deliberately
     // stays independent of src/ (see the crypto note above). Miss one and a
@@ -290,6 +290,7 @@ async function main() {
       'admin_ntfy_token',
       'maps_api_key',
       'unsplash_api_key',
+      'amap_api_key',
     ]) {
       const row = db.prepare('SELECT value FROM app_settings WHERE key = ?').get(key) as { value: string } | undefined;
       if (!row?.value) continue;
@@ -404,7 +405,7 @@ async function main() {
     }
 
     // --- settings: per-user encrypted keys ---
-    const encryptedSettingKeys = ['webhook_url', 'ntfy_token', 'mapbox_access_token', 'carto_api_key', 'llm_api_key'];
+    const encryptedSettingKeys = ['webhook_url', 'ntfy_token', 'mapbox_access_token', 'carto_api_key', 'tianditu_api_key', 'llm_api_key'];
     const settingRows = db.prepare(
       `SELECT user_id, key, value FROM settings WHERE key IN (${encryptedSettingKeys.map(() => '?').join(', ')})`
     ).all(...encryptedSettingKeys) as { user_id: number; key: string; value: string }[];

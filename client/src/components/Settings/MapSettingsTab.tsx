@@ -333,6 +333,7 @@ export default function MapSettingsTab(): React.ReactElement {
 
       {/* Same deal as the Mapbox token: a managed install brings its own key. */}
       {provider === 'leaflet' && !managed && (
+        <>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('settings.mapCartoKey')}</label>
           <input
@@ -352,7 +353,9 @@ export default function MapSettingsTab(): React.ReactElement {
           {cartoNeedsKey && (
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{t('settings.mapCartoKeyMissing')}</p>
           )}
-          <label className="block text-sm font-medium text-slate-700 mb-1.5 mt-4">{t('settings.mapTiandituKey')}</label>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('settings.mapTiandituKey')}</label>
           <input
             type="text"
             value={tiandituKey}
@@ -371,6 +374,7 @@ export default function MapSettingsTab(): React.ReactElement {
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{t('settings.mapTiandituKeyMissing')}</p>
           )}
         </div>
+        </>
       )}
 
       {/* GL settings */}
