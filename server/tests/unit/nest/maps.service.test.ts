@@ -756,13 +756,34 @@ describe('resolveGoogleMapsUrl coordinate extraction (ReDoS guards)', () => {
   });
 
   it('MAPS-resolve-amap: extracts a GCJ position from an Amap share URL', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('no follow')));
+    const fetchMock = vi.fn().mockRejectedValue(new Error('no follow'));
+    vi.stubGlobal('fetch', fetchMock);
     const result = await svc.resolveUrl(
       'https://uri.amap.com/marker?position=116.39747,39.908823&name=天安门',
     );
     expect(result.name).toBe('天安门');
     expect(result.lng).toBeLessThan(116.39747);
     expect(result.lat).toBeLessThan(39.908823);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('MAPS-resolve-amap-surl-host: discards a short link that lands off Amap', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      url: 'https://evil.example/pin?position=116.39,39.90&name=Hacked',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(svc.resolveUrl('https://surl.amap.com/abc')).rejects.toMatchObject({ status: 400 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('MAPS-resolve-amap-empty: does not fall through to Google when Amap has no pin', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ url: 'https://www.amap.com/' });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(svc.resolveUrl('https://www.amap.com/')).rejects.toMatchObject({
+      status: 400,
+      message: 'Could not extract coordinates from URL',
+    });
+    expect(fetchMock.mock.calls.every(([u]) => !String(u).includes('google'))).toBe(true);
   });
 });
 
@@ -1269,6 +1290,27 @@ describe('searchPlaces (fetch stubbed)', () => {
     errorSpy.mockRestore();
     expect(result.source).toBe('google');
     expect((result.places[0] as { google_place_id?: string }).google_place_id).toBe('gid1');
+  });
+
+  it('MAPS-038d: forwards locationBias to Amap as a GCJ location', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [{ id: 'B000', name: '故宫', address: '北京', location: '116.39747,39.908823' }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await svc.searchPlaces(1, '故宫', 'zh', { lat: 39.908823, lng: 116.39747 });
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain('location=');
+    const loc = new URL(url).searchParams.get('location');
+    const [lng, lat] = loc!.split(',').map(Number);
+    expect(lng).toBeGreaterThan(116.39747);
+    expect(lat).toBeGreaterThan(39.908823);
   });
 
   // Session tokens: the keystrokes of one search and the details lookup that
@@ -2116,6 +2158,24 @@ describe('getPlaceDetails (fetch stubbed)', () => {
     vi.stubGlobal('fetch', fetchMock);
     await expect(svc.getPlaceDetailsExpanded(1, 'coords:48.8,2.3')).resolves.toEqual({ place: null });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('MAPS-041j: getPlaceDetailsExpanded serves an amap: id from Amap, not Google', async () => {
+    mockInstanceGet.mockImplementation((key: unknown) =>
+      key === 'amap_api_key' ? { value: 'amap-secret' } : undefined,
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [{ id: 'B000', name: '天安门', address: '北京', location: '2.3522,48.8566' }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await svc.getPlaceDetailsExpanded(1, 'amap:B000');
+    expect(result.place).toMatchObject({ name: '天安门', source: 'amap' });
+    expect(fetchMock.mock.calls.map((call) => String(call[0])).some((url) => url.includes('places.googleapis.com')))
+      .toBe(false);
   });
 });
 

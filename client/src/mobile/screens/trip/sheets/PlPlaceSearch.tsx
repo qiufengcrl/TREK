@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, Search } from 'lucide-react'
 import { mapsApi } from '../../../../api/client'
 import { PlacesSession } from '../../../../utils/placesSession'
-import { isGoogleMapsUrl } from '../../../../components/Planner/PlaceFormModal.helpers'
+import { isShareMapUrl, withFallbackName } from '../../../../components/Planner/PlaceFormModal.helpers'
 import { getApiErrorMessage } from '../../../../utils/apiError'
 import { FIELD_CLS } from './PlSheetChrome'
 import type { TripPlanner } from '../MTripShell'
@@ -132,7 +132,7 @@ export default function PlPlaceSearch({ planner, locationBias, onPick, onResolvi
 
     setResolving(true)
     try {
-      if (isGoogleMapsUrl(trimmed)) {
+      if (isShareMapUrl(trimmed)) {
         const resolved = await mapsApi.resolveUrl(trimmed)
         if (resolved.lat && resolved.lng) {
           onPick({
@@ -180,7 +180,7 @@ export default function PlPlaceSearch({ planner, locationBias, onPick, onResolvi
         place = (search.places?.[0] as MapsPlace | undefined) ?? null
       }
       if (place) {
-        applyPlace(place)
+        applyPlace(withFallbackName(place, suggestion.mainText))
       } else {
         setQuery(previousQuery)
         toast.error(t('places.mapsSearchError'))

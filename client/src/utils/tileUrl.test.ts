@@ -179,4 +179,14 @@ describe('resolveTileUrl', () => {
     expect(tiandituLabelUrl(vec)).toContain('T=cva_w')
     expect(stripTileApiKey(`${vec}&tk=tk-1`)).toBe(vec)
   })
+
+  it('does not hand the Tianditu tk to a host that merely mentions tianditu.gov.cn', () => {
+    const lookalike = 'https://tianditu.gov.cn.example.org/DataServer?T=vec_w&x={x}&y={y}&l={z}'
+    expect(withTiandituKey(lookalike, 'tk-1')).toBe(lookalike)
+    const pathMention = 'https://tiles.example.com/tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}'
+    expect(withTiandituKey(pathMention, 'tk-1')).toBe(pathMention)
+    const evil = 'https://evil.com/tianditu.gov.cn?T=vec_w&x={x}&y={y}&l={z}'
+    expect(withTiandituKey(evil, 'tk-1')).toBe(evil)
+    expect(resolveTileUrl(lookalike, OSM, null, 'tk-1')).toBe(lookalike)
+  })
 })

@@ -14,7 +14,7 @@ import { useToast } from '../shared/Toast'
 import { Search, Paperclip, X, AlertTriangle, Loader2, Plus } from 'lucide-react'
 import { useTranslation } from '../../i18n'
 import CustomTimePicker from '../shared/CustomTimePicker'
-import { DEFAULT_FORM, isShareMapUrl, mergeResult, type PlaceFormData, type ResultField } from './PlaceFormModal.helpers'
+import { DEFAULT_FORM, isShareMapUrl, mergeResult, withFallbackName, type PlaceFormData, type ResultField } from './PlaceFormModal.helpers'
 import { getApiErrorMessage } from '../../utils/apiError'
 import { BookingCostsSection } from './BookingCostsSection'
 import type { BookingExpenseRequest } from './BookingCostsSection.types'
@@ -369,7 +369,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
         place = search.places?.[0] ?? null
       }
       if (place) {
-        handleSelectMapsResult(place)
+        handleSelectMapsResult(withFallbackName(place, suggestion.mainText))
       } else {
         setMapsSearch(previousSearch)
         toast.error(t('places.mapsSearchError'))

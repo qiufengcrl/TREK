@@ -10,6 +10,27 @@ import { parseAmapLocation, wgs84ToGcj02 } from './gcj02';
 
 const BASE = 'https://restapi.amap.com';
 const TIMEOUT_MS = 8000;
+const MIN_INTERVAL_MS = 200;
+
+let lastCall = 0;
+let minIntervalMs = MIN_INTERVAL_MS;
+
+/** Test seam — mirrors nominatim.client. Suite setup zeros this. */
+export function setAmapThrottleInterval(ms: number): void {
+  minIntervalMs = ms;
+}
+
+async function throttle(): Promise<void> {
+  const elapsed = Date.now() - lastCall;
+  const wait = minIntervalMs - elapsed;
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastCall = Date.now();
+}
+
+export interface AmapLocationBias {
+  lat: number;
+  lng: number;
+}
 
 export const AMAP_PLACE_PREFIX = 'amap:';
 
@@ -83,7 +104,14 @@ export class AmapApiError extends Error {
   }
 }
 
+function applyLocationBias(params: URLSearchParams, bias?: AmapLocationBias): void {
+  if (!bias || !Number.isFinite(bias.lat) || !Number.isFinite(bias.lng)) return;
+  const gcj = wgs84ToGcj02(bias.lat, bias.lng);
+  params.set('location', `${gcj.lng},${gcj.lat}`);
+}
+
 async function amapFetch(path: string, params: URLSearchParams): Promise<AmapEnvelope> {
+  await throttle();
   const url = `${BASE}${path}?${params.toString()}`;
   let response: Response;
   try {
@@ -118,11 +146,14 @@ function mapPoi(poi: AmapPoi): AmapMappedPlace {
   const ratingRaw = amapText(poi.biz_ext?.rating);
   const rating = ratingRaw ? Number.parseFloat(ratingRaw) : NaN;
   const photoUrl = amapText(poi.photos?.[0]?.url) || null;
+  const prefixed = id ? `${AMAP_PLACE_PREFIX}${id}` : null;
   return {
     google_place_id: null,
     google_ftid: null,
-    osm_id: null,
-    amap_id: id ? `${AMAP_PLACE_PREFIX}${id}` : null,
+    // osm_id is the persisted provider id the place form already saves. Prefix
+    // keeps getPlaceDetails on the Amap branch (checked before OSM colon split).
+    osm_id: prefixed,
+    amap_id: prefixed,
     name: amapText(poi.name),
     address,
     lat: coords?.lat ?? null,
@@ -137,7 +168,11 @@ function mapPoi(poi: AmapPoi): AmapMappedPlace {
   };
 }
 
-export async function searchAmap(key: string, query: string): Promise<AmapMappedPlace[]> {
+export async function searchAmap(
+  key: string,
+  query: string,
+  bias?: AmapLocationBias,
+): Promise<AmapMappedPlace[]> {
   const params = new URLSearchParams({
     key,
     keywords: query,
@@ -145,6 +180,7 @@ export async function searchAmap(key: string, query: string): Promise<AmapMapped
     page: '1',
     extensions: 'all',
   });
+  applyLocationBias(params, bias);
   const data = await amapFetch('/v3/place/text', params);
   return (data.pois ?? []).map(mapPoi);
 }
@@ -152,11 +188,13 @@ export async function searchAmap(key: string, query: string): Promise<AmapMapped
 export async function autocompleteAmap(
   key: string,
   input: string,
+  bias?: AmapLocationBias,
 ): Promise<{ suggestions: { placeId: string; mainText: string; secondaryText: string }[]; source: string }> {
   const params = new URLSearchParams({
     key,
     keywords: input,
   });
+  applyLocationBias(params, bias);
   const data = await amapFetch('/v3/assistant/inputtips', params);
   const suggestions = (data.tips ?? [])
     .map((tip) => {
@@ -164,12 +202,13 @@ export async function autocompleteAmap(
       const name = amapText(tip.name);
       const secondary = [amapText(tip.district), amapText(tip.address)].filter(Boolean).join(' ');
       if (!name) return null;
-      // 没有 POI id 时用坐标占位，点选后走 details 的坐标回退。
+      // No POI id: encode WGS coords plus the tip name so details does not
+      // wipe the label the user just picked.
       const coords = parseAmapLocation(tip.location);
       const placeId = id
         ? `${AMAP_PLACE_PREFIX}${id}`
         : coords
-          ? `${AMAP_PLACE_PREFIX}coord:${coords.lng.toFixed(6)},${coords.lat.toFixed(6)}`
+          ? `${AMAP_PLACE_PREFIX}coord:${coords.lng.toFixed(6)},${coords.lat.toFixed(6)}:${encodeURIComponent(name)}`
           : '';
       if (!placeId) return null;
       return { placeId, mainText: name, secondaryText: secondary };
@@ -183,16 +222,25 @@ export async function detailsAmap(key: string, placeId: string): Promise<AmapMap
   const rest = amapPoiId(placeId);
   if (rest.startsWith('coord:')) {
     const raw = rest.slice('coord:'.length);
-    const [lngRaw, latRaw] = raw.split(',');
+    const colon = raw.indexOf(':');
+    const coordsPart = colon === -1 ? raw : raw.slice(0, colon);
+    const namePart = colon === -1 ? '' : raw.slice(colon + 1);
+    const [lngRaw, latRaw] = coordsPart.split(',');
     const lat = Number.parseFloat(latRaw ?? '');
     const lng = Number.parseFloat(lngRaw ?? '');
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    let name = '';
+    try {
+      name = namePart ? decodeURIComponent(namePart) : '';
+    } catch {
+      name = namePart;
+    }
     return {
       google_place_id: null,
       google_ftid: null,
-      osm_id: null,
+      osm_id: placeId,
       amap_id: placeId,
-      name: '',
+      name,
       address: '',
       lat,
       lng,

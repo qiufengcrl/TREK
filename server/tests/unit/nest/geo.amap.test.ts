@@ -42,6 +42,7 @@ describe('amap.client', () => {
     expect(places).toHaveLength(1);
     expect(places[0].source).toBe('amap');
     expect(places[0].amap_id).toBe('amap:B000A83M61');
+    expect(places[0].osm_id).toBe('amap:B000A83M61');
     expect(places[0].name).toBe('故宫博物院');
     expect(places[0].phone).toBe('010-85007421');
     expect(places[0].lat).not.toBeNull();
@@ -84,6 +85,7 @@ describe('amap.client', () => {
     const { suggestions, source } = await autocompleteAmap('key-1', '故');
     expect(source).toBe('amap');
     expect(suggestions[0].placeId).toMatch(/^amap:coord:/);
+    expect(suggestions[0].placeId).toContain(encodeURIComponent('某路口'));
     expect(suggestions[1].placeId).toBe('amap:B111');
     expect(suggestions[1].mainText).toBe('故宫');
   });
@@ -105,9 +107,36 @@ describe('amap.client', () => {
     expect(place?.lat).toBeCloseTo(48.8566, 5);
     expect(place?.lng).toBeCloseTo(2.3522, 5);
 
-    const coord = await detailsAmap('key-1', 'amap:coord:116.391000,39.907000');
+    const coord = await detailsAmap('key-1', `amap:coord:116.391000,39.907000:${encodeURIComponent('某路口')}`);
     expect(coord?.lat).toBeCloseTo(39.907, 5);
     expect(coord?.lng).toBeCloseTo(116.391, 5);
+    expect(coord?.name).toBe('某路口');
+    expect(coord?.osm_id).toBe(coord?.amap_id);
+    expect(coord?.osm_id).toMatch(/^amap:coord:/);
+
+    const nameless = await detailsAmap('key-1', 'amap:coord:116.391000,39.907000');
+    expect(nameless?.name).toBe('');
+    expect(nameless?.lat).toBeCloseTo(39.907, 5);
+  });
+
+  it('AMAP-006: search and autocomplete write a GCJ location bias', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: '1', pois: [], tips: [] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await searchAmap('key-1', '故宫', { lat: 39.908823, lng: 116.39747 });
+    const searchUrl = String(fetchMock.mock.calls[0][0]);
+    expect(searchUrl).toContain('location=');
+    const loc = new URL(searchUrl).searchParams.get('location');
+    expect(loc).toBeTruthy();
+    const [lng, lat] = loc!.split(',').map(Number);
+    // Bias is sent as GCJ, east/north of the WGS input inside China.
+    expect(lng).toBeGreaterThan(116.39747);
+    expect(lat).toBeGreaterThan(39.908823);
+
+    await autocompleteAmap('key-1', '故', { lat: 39.908823, lng: 116.39747 });
+    expect(String(fetchMock.mock.calls[1][0])).toContain('location=');
   });
 
   it('AMAP-005: recognises Amap share hosts and rejects lookalikes', async () => {

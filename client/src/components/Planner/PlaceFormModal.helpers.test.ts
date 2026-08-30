@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isAmapShareUrl, isGoogleMapsUrl, isShareMapUrl } from './PlaceFormModal.helpers'
+import { isAmapShareUrl, isGoogleMapsUrl, isShareMapUrl, withFallbackName } from './PlaceFormModal.helpers'
 
 describe('isGoogleMapsUrl', () => {
   it('accepts the short share hosts', () => {
@@ -50,5 +50,13 @@ describe('isAmapShareUrl', () => {
   it('rejects lookalike hosts', () => {
     expect(isAmapShareUrl('https://amap.com.evil.example/x')).toBe(false)
     expect(isShareMapUrl('Eiffel Tower')).toBe(false)
+  })
+})
+
+describe('withFallbackName', () => {
+  it('keeps a real details name and fills an empty one from the suggestion', () => {
+    expect(withFallbackName({ name: '故宫', lat: 39.9 }, '某路口').name).toBe('故宫')
+    expect(withFallbackName({ name: '', lat: 39.9 }, '某路口').name).toBe('某路口')
+    expect(withFallbackName({ lat: 39.9 }, '某路口').name).toBe('某路口')
   })
 })

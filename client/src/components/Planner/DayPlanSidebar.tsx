@@ -2738,7 +2738,7 @@ const DayPlanSidebar = React.memo(function DayPlanSidebar(props: DayPlanSidebarP
                             cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
                           }}
                         >
-                          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '-0.02em' }}>高德</span>
+                          <span className="text-caption font-bold tracking-tight">高德</span>
                         </button>
                         {/* The same day, handed to CoMaps for offline navigation (#1904). The
                             day's own travel mode rides along, so the route it builds walks

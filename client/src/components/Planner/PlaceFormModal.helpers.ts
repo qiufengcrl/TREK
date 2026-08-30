@@ -100,6 +100,12 @@ export type ResultField = (typeof RESULT_FIELDS)[number]
  * about it; a field the user typed survives untouched. `autoFilled` is mutated
  * in place — it is the caller's record of what it owns.
  */
+/** Details for a coord tip can come back with an empty name; keep the label the user picked. */
+export function withFallbackName<T extends Record<string, unknown>>(place: T, fallback: string): T {
+  const name = typeof place.name === 'string' ? place.name.trim() : ''
+  return name ? place : { ...place, name: fallback }
+}
+
 export function mergeResult(
   prev: PlaceFormData,
   result: Record<string, unknown>,

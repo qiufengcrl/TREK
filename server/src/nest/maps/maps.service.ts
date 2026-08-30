@@ -588,6 +588,7 @@ export class MapsService {
     if (isAmapShareUrl(url)) {
       const resolved = await this.resolveAmapShareUrl(url);
       if (resolved) return resolved as MapsResolveUrlResult;
+      throw Object.assign(new Error('Could not extract coordinates from URL'), { status: 400 });
     }
     return this.resolveGoogleMapsUrl(url) as Promise<MapsResolveUrlResult>;
   }
@@ -599,8 +600,11 @@ export class MapsService {
     try {
       const parsed = new URL(url);
       const host = parsed.hostname.toLowerCase();
-      const hasHint = extractAmapPosition(url) || extractAmapPoiId(url);
-      if (host.startsWith('surl.') || host.startsWith('uri.') || !hasHint) {
+      const hasHint = !!(extractAmapPosition(url) || extractAmapPoiId(url));
+      // Follow short links, or any Amap host that carries no pin hint.
+      // uri.amap.com already has position/poiid — following would let a
+      // compromised hop swap the destination.
+      if (host.startsWith('surl.') || !hasHint) {
         const page = await safeFetchFollow(url, { signal: AbortSignal.timeout(10000) }, { bypassInternalIpAllowed: true });
         resolvedUrl = page.url || resolvedUrl;
       }
@@ -608,6 +612,10 @@ export class MapsService {
       if (err instanceof SsrfBlockedError) {
         throw Object.assign(new Error('URL blocked by SSRF check'), { status: 403 });
       }
+    }
+
+    if (!isAmapShareUrl(resolvedUrl)) {
+      throw Object.assign(new Error('Could not extract coordinates from URL'), { status: 400 });
     }
 
     const poiId = extractAmapPoiId(resolvedUrl);
@@ -1534,7 +1542,10 @@ export class MapsService {
     const amapKey = this.getAmapKey(userId);
     if (amapKey) {
       try {
-        const places = await searchAmap(amapKey, query);
+        const bias = locationBias
+          ? { lat: locationBias.lat, lng: locationBias.lng }
+          : undefined;
+        const places = await searchAmap(amapKey, query, bias);
         if (places.length) return { places, source: 'amap' };
       } catch (err) {
         console.error('[Maps] Amap search failed, falling through', err instanceof Error ? err.message : err);
@@ -1620,7 +1631,13 @@ export class MapsService {
     const amapKey = this.getAmapKey(userId);
     if (amapKey) {
       try {
-        const amap = await autocompleteAmap(amapKey, input);
+        const bias = locationBias
+          ? {
+              lat: (locationBias.low.lat + locationBias.high.lat) / 2,
+              lng: (locationBias.low.lng + locationBias.high.lng) / 2,
+            }
+          : undefined;
+        const amap = await autocompleteAmap(amapKey, input, bias);
         if (amap.suggestions.length) return amap;
       } catch (err) {
         console.error('[Maps] Amap autocomplete failed, falling through', err instanceof Error ? err.message : err);
@@ -1860,7 +1877,9 @@ export class MapsService {
     // pseudo-ids and legacy image URLs have no details source at all. Neither may be
     // forwarded to Google, which bills the 400 INVALID_ARGUMENT it answers with.
     if (!isGooglePlaceId(placeId)) {
-      return OSM_PLACE_ID.test(placeId) ? this.getPlaceDetails(userId, placeId, lang) : { place: null };
+      return OSM_PLACE_ID.test(placeId) || isAmapPlaceId(placeId)
+        ? this.getPlaceDetails(userId, placeId, lang)
+        : { place: null };
     }
 
     const langKey = toApiLang(lang); // 'en' default — see getPlaceDetails

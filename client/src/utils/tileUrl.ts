@@ -52,8 +52,16 @@ export function stripTileApiKey(url: string): string {
   return next
 }
 
+/**
+ * Same promise as CARTO: the tk is only appended when the *host* is Tianditu.
+ * A path or query that merely mentions `tianditu.gov.cn` (or a look-alike like
+ * `tianditu.gov.cn.evil.com`) must never receive the key.
+ */
+const TIANDITU_HOST = /^(?:t\{s\}|t[0-7])\.tianditu\.gov\.cn$/i
+
 export function isTiandituTileUrl(url: string): boolean {
-  return /tianditu\.gov\.cn/i.test(url)
+  if (!url) return false
+  return TIANDITU_HOST.test(templateHost(url))
 }
 
 /** 天地图矢量底图配注记层（cva_w / cia_w）。 */
