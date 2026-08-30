@@ -68,6 +68,7 @@ describe('managed key assignment', () => {
       'smtp_port',
       'smtp_skip_tls_verify',
       'smtp_user',
+      'tianditu_api_key',
       'unsplash_api_key',
       'webauthn_origins',
       'webauthn_rp_id',

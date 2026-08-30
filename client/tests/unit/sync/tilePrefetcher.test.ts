@@ -171,6 +171,16 @@ describe('buildTileUrl', () => {
     const url = buildTileUrl(tmpl, 10, 0, 0);
     expect(url).toBe('https://tiles.example.com/10/0/0.png');
   });
+
+  it('appends a Tianditu tk and shards 0–7 the way Leaflet does', () => {
+    const tmpl = 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}';
+    const url = buildTileUrl(tmpl, 10, 500, 300, undefined, 'tk-1');
+    expect(url).toContain('tk=tk-1');
+    expect(url).toMatch(/^https:\/\/t[0-7]\.tianditu\.gov\.cn\//);
+    const leaflet = '01234567';
+    const expected = leaflet[Math.abs(500 + 300) % leaflet.length];
+    expect(url).toContain(`t${expected}.tianditu.gov.cn`);
+  });
 });
 
 // ── countTiles ────────────────────────────────────────────────────────────────

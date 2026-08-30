@@ -17,6 +17,10 @@ import { DatabaseService } from '../database/database.service';
 import { nominatimFetch, type GeoLane } from '../geo/nominatim.client';
 import {
   isAmapPlaceId,
+  isAmapShareUrl,
+  extractAmapPoiId,
+  extractAmapPosition,
+  extractAmapName,
   searchAmap,
   autocompleteAmap,
   detailsAmap,
@@ -580,8 +584,63 @@ export class MapsService {
     return this.reverseGeocode(lat, lng, lang) as Promise<MapsReverseResult>;
   }
 
-  resolveUrl(url: string): Promise<MapsResolveUrlResult> {
+  async resolveUrl(url: string): Promise<MapsResolveUrlResult> {
+    if (isAmapShareUrl(url)) {
+      const resolved = await this.resolveAmapShareUrl(url);
+      if (resolved) return resolved as MapsResolveUrlResult;
+    }
     return this.resolveGoogleMapsUrl(url) as Promise<MapsResolveUrlResult>;
+  }
+
+  private async resolveAmapShareUrl(
+    url: string,
+  ): Promise<{ lat: number; lng: number; name: string | null; address: string | null; google_ftid: string | null } | null> {
+    let resolvedUrl = url;
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      const hasHint = extractAmapPosition(url) || extractAmapPoiId(url);
+      if (host.startsWith('surl.') || host.startsWith('uri.') || !hasHint) {
+        const page = await safeFetchFollow(url, { signal: AbortSignal.timeout(10000) }, { bypassInternalIpAllowed: true });
+        resolvedUrl = page.url || resolvedUrl;
+      }
+    } catch (err) {
+      if (err instanceof SsrfBlockedError) {
+        throw Object.assign(new Error('URL blocked by SSRF check'), { status: 403 });
+      }
+    }
+
+    const poiId = extractAmapPoiId(resolvedUrl);
+    const amapKey = this.getAmapKey(0);
+    if (poiId && amapKey) {
+      try {
+        const place = await detailsAmap(amapKey, `amap:${poiId}`);
+        if (place?.lat != null && place.lng != null) {
+          return {
+            lat: place.lat,
+            lng: place.lng,
+            name: place.name || extractAmapName(resolvedUrl),
+            address: place.address || null,
+            google_ftid: null,
+          };
+        }
+      } catch (err) {
+        console.error('[Maps] Amap share POI lookup failed', err instanceof Error ? err.message : err);
+      }
+    }
+
+    const coords = extractAmapPosition(resolvedUrl);
+    if (!coords) return null;
+    let name = extractAmapName(resolvedUrl);
+    let address: string | null = null;
+    if (amapKey) {
+      try {
+        const rev = await reverseAmap(amapKey, String(coords.lat), String(coords.lng));
+        name = name || rev.name;
+        address = rev.address;
+      } catch { /* coords alone are enough to drop a pin */ }
+    }
+    return { lat: coords.lat, lng: coords.lng, name, address, google_ftid: null };
   }
 
   // OSM-only POI search by category within a viewport bbox (never calls Google).
@@ -1474,8 +1533,12 @@ export class MapsService {
   ): Promise<{ places: Record<string, unknown>[]; source: string }> {
     const amapKey = this.getAmapKey(userId);
     if (amapKey) {
-      const places = await searchAmap(amapKey, query);
-      return { places, source: 'amap' };
+      try {
+        const places = await searchAmap(amapKey, query);
+        if (places.length) return { places, source: 'amap' };
+      } catch (err) {
+        console.error('[Maps] Amap search failed, falling through', err instanceof Error ? err.message : err);
+      }
     }
 
     const { key: apiKey, source: keySource } = this.resolveMapsKey(userId);
@@ -1497,47 +1560,52 @@ export class MapsService {
       };
     }
 
-    const response = await googleFetch('https://places.googleapis.com/v1/places:searchText', 'searchText', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': SEARCH_TEXT_FIELD_MASK,
-      },
-      body: JSON.stringify(searchBody),
-    });
+    try {
+      const response = await googleFetch('https://places.googleapis.com/v1/places:searchText', 'searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': SEARCH_TEXT_FIELD_MASK,
+        },
+        body: JSON.stringify(searchBody),
+      });
 
-    const data = (await response.json()) as { places?: GooglePlaceResult[]; error?: { message?: string } };
+      const data = (await response.json()) as { places?: GooglePlaceResult[]; error?: { message?: string } };
 
-    if (!response.ok) {
-      logKeyFailure('searchText', response.status, userId, keySource);
-      const err = new Error(data.error?.message || 'Google Places API error') as Error & { status: number };
-      err.status = response.status;
-      throw err;
+      if (!response.ok) {
+        logKeyFailure('searchText', response.status, userId, keySource);
+        throw Object.assign(new Error(data.error?.message || 'Google Places API error'), { status: response.status });
+      }
+
+      // A place that has shut down for good is never the answer to "where should we
+      // go" (#1341). Temporarily closed stays: a restaurant on holiday next month is
+      // still worth planning around. Anything without the field is a non-business
+      // result (a park, a viewpoint) and is kept.
+      const places = (data.places || [])
+        .filter((p: GooglePlaceResult) => p.businessStatus !== 'CLOSED_PERMANENTLY')
+        .map((p: GooglePlaceResult) => ({
+        google_place_id: p.id,
+        google_ftid: googleFtidFromMapsUrl(p.googleMapsUri),
+        name: p.displayName?.text || '',
+        address: p.formattedAddress || '',
+        // `?? null`, not `|| null`: 0 is a real coordinate (equator / prime meridian).
+        lat: p.location?.latitude ?? null,
+        lng: p.location?.longitude ?? null,
+        rating: p.rating || null,
+        website: p.websiteUri || null,
+        phone: p.nationalPhoneNumber || null,
+        types: p.types || [],
+        source: 'google',
+      }));
+
+      if (places.length) return { places, source: 'google' };
+    } catch (err) {
+      console.error('[Maps] Google search failed, falling through to Nominatim', err instanceof Error ? err.message : err);
     }
 
-    // A place that has shut down for good is never the answer to "where should we
-    // go" (#1341). Temporarily closed stays: a restaurant on holiday next month is
-    // still worth planning around. Anything without the field is a non-business
-    // result (a park, a viewpoint) and is kept.
-    const places = (data.places || [])
-      .filter((p: GooglePlaceResult) => p.businessStatus !== 'CLOSED_PERMANENTLY')
-      .map((p: GooglePlaceResult) => ({
-      google_place_id: p.id,
-      google_ftid: googleFtidFromMapsUrl(p.googleMapsUri),
-      name: p.displayName?.text || '',
-      address: p.formattedAddress || '',
-      // `?? null`, not `|| null`: 0 is a real coordinate (equator / prime meridian).
-      lat: p.location?.latitude ?? null,
-      lng: p.location?.longitude ?? null,
-      rating: p.rating || null,
-      website: p.websiteUri || null,
-      phone: p.nationalPhoneNumber || null,
-      types: p.types || [],
-      source: 'google',
-    }));
-
-    return { places, source: 'google' };
+    const places = await this.searchNominatim(query, lang);
+    return { places, source: 'openstreetmap' };
   }
 
   // ── Autocomplete (Google or Nominatim fallback) ────────────────────────────
@@ -1551,7 +1619,12 @@ export class MapsService {
   ): Promise<{ suggestions: { placeId: string; mainText: string; secondaryText: string }[]; source: string }> {
     const amapKey = this.getAmapKey(userId);
     if (amapKey) {
-      return autocompleteAmap(amapKey, input);
+      try {
+        const amap = await autocompleteAmap(amapKey, input);
+        if (amap.suggestions.length) return amap;
+      } catch (err) {
+        console.error('[Maps] Amap autocomplete failed, falling through', err instanceof Error ? err.message : err);
+      }
     }
 
     const { key: apiKey, source: keySource } = this.resolveMapsKey(userId);
@@ -1577,37 +1650,41 @@ export class MapsService {
       };
     }
 
-    const response = await googleFetch('https://places.googleapis.com/v1/places:autocomplete', 'autocomplete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-      },
-      body: JSON.stringify(body),
-    });
+    try {
+      const response = await googleFetch('https://places.googleapis.com/v1/places:autocomplete', 'autocomplete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+        },
+        body: JSON.stringify(body),
+      });
 
-    const data = (await response.json()) as {
-      suggestions?: GoogleAutocompleteSuggestion[];
-      error?: { message?: string };
-    };
+      const data = (await response.json()) as {
+        suggestions?: GoogleAutocompleteSuggestion[];
+        error?: { message?: string };
+      };
 
-    if (!response.ok) {
-      logKeyFailure('autocomplete', response.status, userId, keySource);
-      const err = new Error(data.error?.message || 'Google Places Autocomplete error') as Error & { status: number };
-      err.status = response.status;
-      throw err;
+      if (!response.ok) {
+        logKeyFailure('autocomplete', response.status, userId, keySource);
+        throw Object.assign(new Error(data.error?.message || 'Google Places Autocomplete error'), { status: response.status });
+      }
+
+      const suggestions = (data.suggestions || [])
+        .filter((s) => s.placePrediction)
+        .slice(0, 5)
+        .map((s) => ({
+          placeId: s.placePrediction!.placeId,
+          mainText: s.placePrediction!.structuredFormat?.mainText?.text || '',
+          secondaryText: s.placePrediction!.structuredFormat?.secondaryText?.text || '',
+        }));
+
+      if (suggestions.length) return { suggestions, source: 'google' };
+    } catch (err) {
+      console.error('[Maps] Google autocomplete failed, falling through to Nominatim', err instanceof Error ? err.message : err);
     }
 
-    const suggestions = (data.suggestions || [])
-      .filter((s) => s.placePrediction)
-      .slice(0, 5)
-      .map((s) => ({
-        placeId: s.placePrediction!.placeId,
-        mainText: s.placePrediction!.structuredFormat?.mainText?.text || '',
-        secondaryText: s.placePrediction!.structuredFormat?.secondaryText?.text || '',
-      }));
-
-    return { suggestions, source: 'google' };
+    return this.autocompleteNominatim(input, lang);
   }
 
   private async autocompleteNominatim(
@@ -2038,7 +2115,12 @@ export class MapsService {
   ): Promise<{ name: string | null; address: string | null }> {
     const amapKey = this.getAmapKey(0);
     if (amapKey) {
-      return reverseAmap(amapKey, lat, lng);
+      try {
+        const amap = await reverseAmap(amapKey, lat, lng);
+        if (amap.address || amap.name) return amap;
+      } catch (err) {
+        console.error('[Maps] Amap reverse failed, falling through', err instanceof Error ? err.message : err);
+      }
     }
 
     const params = new URLSearchParams({

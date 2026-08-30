@@ -126,6 +126,8 @@ export interface Settings {
   map_base_layer?: 'default' | 'satellite'
   /** CARTO basemaps watermark keyless tiles; the key is appended as ?key= (#2054). */
   carto_api_key?: string
+  /** 天地图 tk，拼进瓦片 URL；和 CARTO 一样会进浏览器。 */
+  tianditu_api_key?: string
   mapbox_access_token?: string
   mapbox_style?: string
   maplibre_style?: string

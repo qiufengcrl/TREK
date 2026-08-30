@@ -21,8 +21,8 @@
 import type { Place } from '../types'
 import { offlineDb, upsertSyncMeta } from '../db/offlineDb'
 import { isAuthed } from './authGate'
-import { normalizeTileUrl, withTileApiKey } from '../utils/tileUrl'
-import { CARTO_LIGHT } from '../constants/mapDefaults'
+import { isTiandituTileUrl, normalizeTileUrl, withTileApiKey, withTiandituKey } from '../utils/tileUrl'
+import { CARTO_LIGHT, TIANDITU_SUBDOMAINS } from '../constants/mapDefaults'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -69,8 +69,8 @@ const SUBDOMAINS = ['a', 'b', 'c']
  * different host on every run, which both defeats the cache lookup below and
  * stores the tile once per host.
  */
-function subdomainFor(x: number, y: number): string {
-  return SUBDOMAINS[Math.abs(x + y) % SUBDOMAINS.length]
+function subdomainFor(x: number, y: number, subdomains: string[]): string {
+  return subdomains[Math.abs(x + y) % subdomains.length]
 }
 
 // ── Tile math ──────────────────────────────────────────────────────────────────
@@ -159,16 +159,24 @@ export function countTiles(bbox: TileBbox, minZoom: number, maxZoom: number): nu
  * admin default rather than the value from the settings store, so the OSM
  * sharding rewrite has to happen here too.
  *
- * The CARTO key is appended here as well, and it has to be: the Workbox cache is
- * keyed on the whole URL including the query, so a tile prefetched without the
- * key is a tile the map never asks for.
+ * The CARTO / Tianditu keys are appended here as well, and they have to be: the
+ * Workbox cache is keyed on the whole URL including the query, so a tile
+ * prefetched without the key is a tile the map never asks for.
  */
-export function buildTileUrl(template: string, z: number, x: number, y: number, cartoKey?: string): string {
-  return withTileApiKey(normalizeTileUrl(template), cartoKey)
+export function buildTileUrl(
+  template: string,
+  z: number,
+  x: number,
+  y: number,
+  cartoKey?: string,
+  tiandituKey?: string,
+): string {
+  const subdomains = isTiandituTileUrl(template) ? TIANDITU_SUBDOMAINS.split('') : SUBDOMAINS
+  return withTiandituKey(withTileApiKey(normalizeTileUrl(template), cartoKey), tiandituKey)
     .replace('{z}', String(z))
     .replace('{x}', String(x))
     .replace('{y}', String(y))
-    .replace('{s}', subdomainFor(x, y))
+    .replace('{s}', subdomainFor(x, y, subdomains))
     .replace('{r}', '')
 }
 
@@ -230,6 +238,7 @@ export async function prefetchTiles(
   minZoom = 10,
   maxZoom = 16,
   cartoKey?: string,
+  tiandituKey?: string,
 ): Promise<number> {
   if (!navigator.onLine) return 0
   if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return 0
@@ -251,7 +260,7 @@ export async function prefetchTiles(
       if (!navigator.onLine || !isAuthed()) return
 
       const [z, x, y] = coords[cursor++]
-      const url = buildTileUrl(tileUrlTemplate, z, x, y, cartoKey)
+      const url = buildTileUrl(tileUrlTemplate, z, x, y, cartoKey, tiandituKey)
 
       if (cache && (await cache.match(url))) continue
 
@@ -318,6 +327,7 @@ export async function prefetchTilesForTrip(
   tileUrlTemplate?: string,
   force = false,
   cartoKey?: string,
+  tiandituKey?: string,
 ): Promise<void> {
   const template = tileUrlTemplate || DEFAULT_TILE_URL
   const bbox = computeBbox(places)
@@ -339,7 +349,7 @@ export async function prefetchTilesForTrip(
   // tile providers that don't send CORS headers. To stop the browser evicting
   // these tiles under the inflated quota, we request persistent storage at app
   // init instead (sync/persistentStorage.ts).
-  const fetched = await prefetchTiles(bbox, template, 10, 16, cartoKey)
+  const fetched = await prefetchTiles(bbox, template, 10, 16, cartoKey, tiandituKey)
 
   // Update syncMeta with bbox and tile count
   const meta = await offlineDb.syncMeta.get(tripId)

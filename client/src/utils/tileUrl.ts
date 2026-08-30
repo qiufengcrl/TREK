@@ -45,14 +45,41 @@ export function withTileApiKey(url: string, key?: string | null): string {
 
 /** Keeps the key out of anything we persist: stored templates, book documents. */
 export function stripTileApiKey(url: string): string {
-  if (!url || !/[?&]key=/.test(url)) return url
-  return url.replace(/([?&])key=[^&]*&?/, '$1').replace(/[?&]$/, '')
+  if (!url) return url
+  let next = url
+  if (/[?&]key=/.test(next)) next = next.replace(/([?&])key=[^&]*&?/, '$1').replace(/[?&]$/, '')
+  if (/[?&]tk=/.test(next)) next = next.replace(/([?&])tk=[^&]*&?/, '$1').replace(/[?&]$/, '')
+  return next
+}
+
+export function isTiandituTileUrl(url: string): boolean {
+  return /tianditu\.gov\.cn/i.test(url)
+}
+
+/** 天地图矢量底图配注记层（cva_w / cia_w）。 */
+export function tiandituLabelUrl(url: string): string | null {
+  if (!isTiandituTileUrl(url)) return null
+  if (url.includes('T=vec_w')) return url.replace('T=vec_w', 'T=cva_w')
+  if (url.includes('T=img_w')) return url.replace('T=img_w', 'T=cia_w')
+  return null
+}
+
+export function withTiandituKey(url: string, key?: string | null): string {
+  if (!url || !key || !isTiandituTileUrl(url)) return url
+  if (/[?&]tk=/.test(url)) return url
+  return `${url}${url.includes('?') ? '&' : '?'}tk=${encodeURIComponent(key)}`
 }
 
 /**
  * A blank template means "not configured", not "no tiles": the settings
  * previews save an empty string and would otherwise render grey.
  */
-export function resolveTileUrl(template: string | null | undefined, fallback: string, cartoKey?: string | null): string {
-  return withTileApiKey(normalizeTileUrl(template?.trim() || fallback), cartoKey)
+export function resolveTileUrl(
+  template: string | null | undefined,
+  fallback: string,
+  cartoKey?: string | null,
+  tiandituKey?: string | null,
+): string {
+  const normalized = normalizeTileUrl(template?.trim() || fallback)
+  return withTiandituKey(withTileApiKey(normalized, cartoKey), tiandituKey)
 }

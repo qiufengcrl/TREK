@@ -9,6 +9,7 @@ import {
   calculateSegments,
   optimizeRoute,
   generateGoogleMapsUrl,
+  generateAmapUrl,
   generateCoMapsUrl,
   parsePluginProfile,
   withHotelBookends,
@@ -251,6 +252,29 @@ describe('generateGoogleMapsUrl', () => {
     expect(result).toMatch(/^https:\/\/www\.google\.com\/maps\/dir\//)
     expect(result).toContain('48.85,2.35')
     expect(result).toContain('48.86,2.36')
+  })
+})
+
+describe('generateAmapUrl', () => {
+  it('FE-COMP-ROUTECALCULATOR-AMAP-001: returns null for empty places', () => {
+    expect(generateAmapUrl([])).toBeNull()
+  })
+
+  it('FE-COMP-ROUTECALCULATOR-AMAP-002: a China pin uses a GCJ marker URL', () => {
+    const result = generateAmapUrl([{ lat: 39.907, lng: 116.391, name: '天安门' }])
+    expect(result).toMatch(/^https:\/\/uri\.amap\.com\/marker\?/)
+    expect(result).toContain('name=')
+    expect(result).not.toContain('116.391,39.907')
+  })
+
+  it('FE-COMP-ROUTECALCULATOR-AMAP-003: two stops become a navigation URL', () => {
+    const result = generateAmapUrl([
+      { lat: 39.907, lng: 116.391, name: 'A' },
+      { lat: 39.916, lng: 116.397, name: 'B' },
+    ])
+    expect(result).toMatch(/^https:\/\/uri\.amap\.com\/navigation\?/)
+    expect(result).toContain('from=')
+    expect(result).toContain('to=')
   })
 })
 

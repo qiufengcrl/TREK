@@ -2,6 +2,7 @@ import { useSettingsStore } from '../../store/settingsStore'
 import { pluginsApi } from '../../api/client'
 import type { DistanceUnit, RouteResult, RouteSegment, RouteWithLegs, Waypoint, RouteAnchors } from '../../types'
 import { formatDistance } from '../../utils/units'
+import { wgs84ToGcj02 } from '../../utils/gcj02'
 
 const OSRM_BASE = 'https://router.project-osrm.org/route/v1'
 
@@ -114,6 +115,28 @@ export function generateGoogleMapsUrl(places: Waypoint[]): string | null {
   }
   const stops = valid.map((p) => `${p.lat},${p.lng}`).join('/')
   return `https://www.google.com/maps/dir/${stops}`
+}
+
+function amapPoint(p: NamedWaypoint | Waypoint): string {
+  const gcj = wgs84ToGcj02(p.lat, p.lng)
+  const name = 'name' in p && p.name?.trim() ? p.name.trim() : `${gcj.lng},${gcj.lat}`
+  return `${gcj.lng},${gcj.lat},${encodeURIComponent(name)}`
+}
+
+/** 高德 URI：单点标记，多点导航。坐标转 GCJ-02。 */
+export function generateAmapUrl(places: NamedWaypoint[]): string | null {
+  const valid = places.filter((p) => p.lat && p.lng)
+  if (valid.length === 0) return null
+  if (valid.length === 1) {
+    const gcj = wgs84ToGcj02(valid[0].lat, valid[0].lng)
+    const name = encodeURIComponent(valid[0].name?.trim() || '')
+    return `https://uri.amap.com/marker?position=${gcj.lng},${gcj.lat}${name ? `&name=${name}` : ''}&src=trek&callnative=1`
+  }
+  const from = amapPoint(valid[0])
+  const to = amapPoint(valid[valid.length - 1])
+  const via = valid.slice(1, -1).map(amapPoint).join(';')
+  const viaQ = via ? `&via=${via}` : ''
+  return `https://uri.amap.com/navigation?from=${from}&to=${to}${viaQ}&mode=car&policy=1&src=trek&callnative=1`
 }
 
 /** A stop that can carry its name into a deep link that has somewhere to put one. */

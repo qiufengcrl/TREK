@@ -14,7 +14,7 @@ import { useToast } from '../shared/Toast'
 import { Search, Paperclip, X, AlertTriangle, Loader2, Plus } from 'lucide-react'
 import { useTranslation } from '../../i18n'
 import CustomTimePicker from '../shared/CustomTimePicker'
-import { DEFAULT_FORM, isGoogleMapsUrl, mergeResult, type PlaceFormData, type ResultField } from './PlaceFormModal.helpers'
+import { DEFAULT_FORM, isShareMapUrl, mergeResult, type PlaceFormData, type ResultField } from './PlaceFormModal.helpers'
 import { getApiErrorMessage } from '../../utils/apiError'
 import { BookingCostsSection } from './BookingCostsSection'
 import type { BookingExpenseRequest } from './BookingCostsSection.types'
@@ -239,7 +239,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
 
   // Autocomplete fetch — aborts any in-flight request before starting a new one
   const fetchSuggestions = useCallback(async (query: string) => {
-    if (query.length < 2 || isGoogleMapsUrl(query)) {
+    if (query.length < 2 || isShareMapUrl(query)) {
       setAcSuggestions([])
       setAcHighlight(-1)
       return
@@ -264,7 +264,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     if (acDebounceRef.current) clearTimeout(acDebounceRef.current)
 
     const trimmed = mapsSearch.trim()
-    if (trimmed.length < 2 || isGoogleMapsUrl(trimmed)) {
+    if (trimmed.length < 2 || isShareMapUrl(trimmed)) {
       setAcSuggestions([])
       setAcHighlight(-1)
       placesSessionRef.current.end()
@@ -290,7 +290,7 @@ function usePlaceFormModal(props: PlaceFormModalProps) {
     try {
       // Detect Google Maps URLs and resolve them directly
       const trimmed = mapsSearch.trim()
-      if (isGoogleMapsUrl(trimmed)) {
+      if (isShareMapUrl(trimmed)) {
         const resolved = await mapsApi.resolveUrl(trimmed)
         if (resolved.lat && resolved.lng) {
           setForm(prev => ({

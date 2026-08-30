@@ -45,6 +45,7 @@ export const DEFAULT_SETTINGS: Settings = {
   map_base_layer: 'default',
   map_poi_pill_enabled: true,
   carto_api_key: '',
+  tianditu_api_key: '',
   mapbox_access_token: '',
   mapbox_style: 'mapbox://styles/mapbox/standard',
   maplibre_style: '',
@@ -115,7 +116,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   updateSetting: async (key: keyof Settings, value: Settings[keyof Settings]) => {
     const next =
       key === 'map_tile_url' && typeof value === 'string' ? cleanTileTemplate(value) : value
-    if (key === 'carto_api_key' && next !== get().settings.carto_api_key) void clearTileCache()
+    if (
+      (key === 'carto_api_key' && next !== get().settings.carto_api_key)
+      || (key === 'tianditu_api_key' && next !== get().settings.tianditu_api_key)
+    ) void clearTileCache()
     set((state) => ({
       settings: { ...state.settings, [key]: next },
     }))
@@ -146,7 +150,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const patch = withNormalizedTileUrl(settingsObj)
     // Cached tiles are keyed by their full URL, so a new key leaves the whole
     // offline cache stranded behind the old one.
-    if ('carto_api_key' in patch && patch.carto_api_key !== get().settings.carto_api_key) {
+    if (
+      ('carto_api_key' in patch && patch.carto_api_key !== get().settings.carto_api_key)
+      || ('tianditu_api_key' in patch && patch.tianditu_api_key !== get().settings.tianditu_api_key)
+    ) {
       void clearTileCache()
     }
     set((state) => ({

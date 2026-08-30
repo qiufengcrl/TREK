@@ -17,3 +17,9 @@ export const CARTO_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y
 export const CARTO_LIGHT_NOLABELS = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png'
 export const CARTO_DARK_NOLABELS = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
 export const CARTO_VOYAGER = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+
+/** 天地图矢量（WGS-84）。需要 tk，在 resolveTileUrl 里追加。{s} = 0–7。 */
+export const TIANDITU_VEC = 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}'
+export const TIANDITU_IMG = 'https://t{s}.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}'
+export const TIANDITU_SUBDOMAINS = '01234567'
+export const TIANDITU_ATTRIBUTION = '&copy; <a href="https://www.tianditu.gov.cn/">天地图</a>'

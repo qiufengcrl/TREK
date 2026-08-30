@@ -39,6 +39,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'carto.com Basemap-API-Key',
   'settings.mapCartoKeyMissing':
     'Diese Vorlage ist eine CARTO-Basiskarte. Ohne Key brennt CARTO "API KEY REQUIRED" in jede Kachel.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'Kartenstil',
   'settings.mapStylePlaceholder': 'Mapbox-Stil wählen',
   'settings.mapStyleHint': 'Preset oder eigene mapbox://styles/USER/ID URL',

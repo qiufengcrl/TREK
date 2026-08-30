@@ -213,6 +213,36 @@ describe('getUserSettings', () => {
     }
   });
 
+  it('SET-SVC-035 — tianditu_api_key is stored encrypted and read back in cleartext, never masked', () => {
+    const { user } = createUser(testDb);
+    svc.upsertSetting(user.id, 'tianditu_api_key', 'tdt-user');
+    const raw = testDb
+      .prepare("SELECT value FROM settings WHERE user_id = ? AND key = 'tianditu_api_key'")
+      .get(user.id) as { value: string };
+    expect(raw.value).toBe('tdt-user');
+    expect(svc.getUserSettings(user.id).tianditu_api_key).toBe('tdt-user');
+
+    svc.upsertSetting(user.id, 'tianditu_api_key', '12345');
+    expect(svc.getUserSettings(user.id).tianditu_api_key).toBe('12345');
+  });
+
+  it('SET-SVC-036 — an empty user tianditu_api_key falls back to the admin default', () => {
+    const { user } = createUser(testDb);
+    setAdminDefault('tianditu_api_key', 'tdt-admin');
+    testDb.prepare("INSERT INTO settings (user_id, key, value) VALUES (?, 'tianditu_api_key', '')").run(user.id);
+    expect(svc.getUserSettings(user.id).tianditu_api_key).toBe('tdt-admin');
+  });
+
+  it('SET-SVC-037 — TIANDITU_API_KEY fills an empty user key on a self-hosted install', () => {
+    const { user } = createUser(testDb);
+    vi.stubEnv('TIANDITU_API_KEY', 'tdt-env');
+    try {
+      expect(svc.getUserSettings(user.id).tianditu_api_key).toBe('tdt-env');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('SET-SVC-034 — the injected CARTO key leaves map_provider alone', () => {
     const { user } = createUser(testDb);
     vi.stubEnv('TREK_MANAGED', 'true');

@@ -38,6 +38,11 @@ const settings: TranslationStrings = {
   'settings.mapCartoKeyLink': 'kunci API peta dasar carto.com',
   'settings.mapCartoKeyMissing':
     'Templat ini adalah peta dasar CARTO. Tanpa kunci, CARTO mencetak "API KEY REQUIRED" di setiap ubin.',
+  'settings.mapTiandituKey': 'Tianditu API key',
+  'settings.mapTiandituKeyHint': 'Required for Tianditu tiles. Free browser key from',
+  'settings.mapTiandituKeyLink': 'console.tianditu.gov.cn',
+  'settings.mapTiandituKeyMissing':
+    'This template is Tianditu. Without a tk the tiles will not load.',
   'settings.mapStyle': 'Gaya peta',
   'settings.mapStylePlaceholder': 'Pilih gaya Mapbox',
   'settings.mapStyleHint': 'Preset atau URL mapbox://styles/USER/ID milikmu',

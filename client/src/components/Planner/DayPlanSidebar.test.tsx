@@ -14,7 +14,7 @@ import {
   buildUser, buildTrip, buildDay, buildPlace, buildCategory, buildAssignment, buildDayNote, buildReservation,
 } from '../../../tests/helpers/factories'
 import type { Accommodation, Reservation } from '../../types'
-import { calculateRouteWithLegs, generateCoMapsUrl, generateGoogleMapsUrl } from '../Map/RouteCalculator'
+import { calculateRouteWithLegs, generateAmapUrl, generateCoMapsUrl, generateGoogleMapsUrl } from '../Map/RouteCalculator'
 import DayPlanSidebar from './DayPlanSidebar'
 import { makeMarkerDraggable } from '../Map/markerDrag'
 
@@ -60,6 +60,7 @@ vi.mock('../PDF/TripPDF', () => ({ downloadTripPDF: vi.fn().mockResolvedValue(un
 vi.mock('../Map/RouteCalculator', () => ({
   calculateRoute: vi.fn().mockResolvedValue({ distanceText: '5 km', durationText: '1h', coordinates: [] }),
   generateGoogleMapsUrl: vi.fn().mockReturnValue('https://maps.google.com/...'),
+  generateAmapUrl: vi.fn().mockReturnValue('https://uri.amap.com/marker?position=1,2'),
   generateCoMapsUrl: vi.fn().mockReturnValue('https://comaps.at/...'),
   optimizeRoute: vi.fn().mockImplementation((places) => places),
   // One leg per waypoint gap; the connector between two stops reads distanceText.
@@ -197,6 +198,7 @@ beforeEach(() => {
     }),
   }))
   vi.mocked(generateGoogleMapsUrl).mockReturnValue('https://maps.google.com/...')
+  vi.mocked(generateAmapUrl).mockReturnValue('https://uri.amap.com/marker?position=1,2')
   vi.mocked(generateCoMapsUrl).mockReturnValue('https://comaps.at/...')
   sessionStorage.clear()
   localStorage.clear()
@@ -3627,6 +3629,37 @@ describe('DayPlanSidebar', () => {
       { lat: 48.85, lng: 2.35, name: 'Hotel Lutetia' },
     ], 'walking')
     expect(openSpy).toHaveBeenCalledWith('https://comaps.at/...', '_blank', 'noopener,noreferrer')
+    openSpy.mockRestore()
+  })
+
+  it('FE-PLANNER-DAYPLAN-168c: the Amap export hands over the same bookended stops', async () => {
+    const user = userEvent.setup()
+    const { generateAmapUrl } = await import('../Map/RouteCalculator')
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
+    const days = [
+      buildDay({ id: 10, date: '2025-06-01', title: 'Day 1' }),
+      buildDay({ id: 11, date: '2025-06-02', title: 'Day 2' }),
+      buildDay({ id: 12, date: '2025-06-03', title: 'Day 3' }),
+    ]
+    const accommodations: Accommodation[] = [{
+      id: 1, trip_id: 1, start_day_id: 10, end_day_id: 12,
+      place_lat: 48.85, place_lng: 2.35, place_name: 'Hotel Lutetia',
+    }]
+    const assignments = {
+      '11': [
+        buildAssignment({ id: 1, day_id: 11, order_index: 0, place: buildPlace({ id: 1, name: 'Louvre', lat: 48.86, lng: 2.34 }) }),
+        buildAssignment({ id: 2, day_id: 11, order_index: 1, place: buildPlace({ id: 2, name: 'Orsay', lat: 48.87, lng: 2.33 }) }),
+      ],
+    }
+    render(<DayPlanSidebar {...makeDefaultProps({ days, assignments, accommodations, selectedDayId: 11 })} />)
+    await user.click(screen.getByRole('button', { name: 'Open in Amap' }))
+    expect(vi.mocked(generateAmapUrl)).toHaveBeenCalledWith([
+      { lat: 48.85, lng: 2.35, name: 'Hotel Lutetia' },
+      { lat: 48.86, lng: 2.34, name: 'Louvre' },
+      { lat: 48.87, lng: 2.33, name: 'Orsay' },
+      { lat: 48.85, lng: 2.35, name: 'Hotel Lutetia' },
+    ])
+    expect(openSpy).toHaveBeenCalledWith('https://uri.amap.com/marker?position=1,2', '_blank', 'noopener,noreferrer')
     openSpy.mockRestore()
   })
 

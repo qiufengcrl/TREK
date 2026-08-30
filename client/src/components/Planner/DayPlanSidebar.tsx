@@ -8,7 +8,7 @@ import { safeHttpUrl } from '../../utils/safeUrl'
 import { ChevronDown, ChevronRight, ChevronUp, Compass, Navigation, RotateCcw, ExternalLink, Clock, Pencil, GripVertical, Ticket, Plus, FileText, Trash2, Car, Lock, Hotel, Footprints, Route as RouteIcon, Bookmark, TramFront, Zap } from 'lucide-react'
 import { type PickedPlace } from './TransitSearchPanel'
 import { assignmentsApi, reservationsApi, daysApi } from '../../api/client'
-import { calculateRouteWithLegs, optimizeRoute, generateGoogleMapsUrl, generateCoMapsUrl, type NamedWaypoint } from '../Map/RouteCalculator'
+import { calculateRouteWithLegs, optimizeRoute, generateGoogleMapsUrl, generateCoMapsUrl, generateAmapUrl, type NamedWaypoint } from '../Map/RouteCalculator'
 import GoogleMapsIcon from '../shared/GoogleMapsIcon'
 import PlaceAvatar from '../shared/PlaceAvatar'
 import ConfirmDialog from '../shared/ConfirmDialog'
@@ -2723,6 +2723,22 @@ const DayPlanSidebar = React.memo(function DayPlanSidebar(props: DayPlanSidebarP
                           }}
                         >
                           <GoogleMapsIcon size={14} />
+                        </button>
+                        <button type="button"
+                          onClick={() => {
+                            const url = generateAmapUrl(dayExportStops())
+                            if (url) window.open(url, '_blank', 'noopener,noreferrer')
+                          }}
+                          aria-label={t('planner.openAmap')}
+                          title={t('planner.openAmap')}
+                          className="bg-transparent text-content-secondary"
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border-faint)',
+                            cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                          }}
+                        >
+                          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '-0.02em' }}>高德</span>
                         </button>
                         {/* The same day, handed to CoMaps for offline navigation (#1904). The
                             day's own travel mode rides along, so the route it builds walks

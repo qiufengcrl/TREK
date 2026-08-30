@@ -74,7 +74,7 @@ export function isManagedBlocked(env: RuntimeEnvService): boolean {
  * carto_api_key is the same shape, injected on read and public in the browser,
  * and it is the operator's for one more reason: the key is registered to
  * whoever runs the instance, and CARTO's terms hold that account answerable for
- * the tiles it fetches.
+ * the tiles it fetches. tianditu_api_key is the same idea for 天地图 tiles.
  */
 export const MANAGED_LOCKED_SETTING_KEYS = [
   'carto_api_key',
@@ -94,6 +94,7 @@ export const MANAGED_LOCKED_SETTING_KEYS = [
   'smtp_port',
   'smtp_skip_tls_verify',
   'smtp_user',
+  'tianditu_api_key',
   'unsplash_api_key',
   'webauthn_origins',
   'webauthn_rp_id',

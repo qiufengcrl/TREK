@@ -4,6 +4,9 @@ import {
   autocompleteAmap,
   detailsAmap,
   isAmapPlaceId,
+  isAmapShareUrl,
+  extractAmapPosition,
+  extractAmapPoiId,
   amapText,
   AmapApiError,
 } from '../../../src/nest/geo/amap.client';
@@ -35,6 +38,7 @@ describe('amap.client', () => {
     );
 
     const places = await searchAmap('key-1', '故宫');
+    expect(String((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0])).toContain('extensions=all');
     expect(places).toHaveLength(1);
     expect(places[0].source).toBe('amap');
     expect(places[0].amap_id).toBe('amap:B000A83M61');
@@ -104,5 +108,15 @@ describe('amap.client', () => {
     const coord = await detailsAmap('key-1', 'amap:coord:116.391000,39.907000');
     expect(coord?.lat).toBeCloseTo(39.907, 5);
     expect(coord?.lng).toBeCloseTo(116.391, 5);
+  });
+
+  it('AMAP-005: recognises Amap share hosts and rejects lookalikes', async () => {
+    expect(isAmapShareUrl('https://uri.amap.com/marker?position=116.39,39.90&name=天安门')).toBe(true);
+    expect(isAmapShareUrl('https://surl.amap.com/abc')).toBe(true);
+    expect(isAmapShareUrl('https://amap.com.evil.example/x')).toBe(false);
+    expect(extractAmapPoiId('https://www.amap.com/place/B000A83M61')).toBe('B000A83M61');
+    const pos = extractAmapPosition('https://uri.amap.com/marker?position=116.39747,39.908823');
+    expect(pos).not.toBeNull();
+    expect(pos!.lng).toBeLessThan(116.39747);
   });
 });

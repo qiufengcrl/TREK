@@ -35,9 +35,11 @@ export interface AmapMappedPlace {
   address: string;
   lat: number | null;
   lng: number | null;
-  rating: null;
-  website: null;
+  rating: number | null;
+  website: string | null;
   phone: string | null;
+  opening_hours: string | null;
+  image_url: string | null;
   types: string[];
   source: 'amap';
 }
@@ -58,6 +60,9 @@ interface AmapPoi {
   location?: unknown;
   tel?: unknown;
   type?: unknown;
+  website?: unknown;
+  biz_ext?: { rating?: unknown; open_time?: unknown; tel?: unknown };
+  photos?: { url?: unknown }[];
 }
 
 interface AmapTip {
@@ -110,6 +115,9 @@ function mapPoi(poi: AmapPoi): AmapMappedPlace {
     .split(';')
     .map((s) => s.trim())
     .filter(Boolean);
+  const ratingRaw = amapText(poi.biz_ext?.rating);
+  const rating = ratingRaw ? Number.parseFloat(ratingRaw) : NaN;
+  const photoUrl = amapText(poi.photos?.[0]?.url) || null;
   return {
     google_place_id: null,
     google_ftid: null,
@@ -119,9 +127,11 @@ function mapPoi(poi: AmapPoi): AmapMappedPlace {
     address,
     lat: coords?.lat ?? null,
     lng: coords?.lng ?? null,
-    rating: null,
-    website: null,
-    phone: amapText(poi.tel) || null,
+    rating: Number.isFinite(rating) ? rating : null,
+    website: amapText(poi.website) || null,
+    phone: amapText(poi.tel) || amapText(poi.biz_ext?.tel) || null,
+    opening_hours: amapText(poi.biz_ext?.open_time) || null,
+    image_url: photoUrl,
     types,
     source: 'amap',
   };
@@ -133,7 +143,7 @@ export async function searchAmap(key: string, query: string): Promise<AmapMapped
     keywords: query,
     offset: '10',
     page: '1',
-    extensions: 'base',
+    extensions: 'all',
   });
   const data = await amapFetch('/v3/place/text', params);
   return (data.pois ?? []).map(mapPoi);
@@ -189,12 +199,14 @@ export async function detailsAmap(key: string, placeId: string): Promise<AmapMap
       rating: null,
       website: null,
       phone: null,
+      opening_hours: null,
+      image_url: null,
       types: [],
       source: 'amap',
     };
   }
   if (!rest) return null;
-  const params = new URLSearchParams({ key, id: rest, extensions: 'base' });
+  const params = new URLSearchParams({ key, id: rest, extensions: 'all' });
   const data = await amapFetch('/v3/place/detail', params);
   const poi = data.pois?.[0];
   return poi ? mapPoi(poi) : null;
@@ -226,5 +238,50 @@ export async function probeAmapKey(key: string): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/** 高德分享 / 短链 / 开放平台 URI，不含伪装成 *.amap.com.evil.com 的主机。 */
+export function isAmapShareUrl(input: string): boolean {
+  try {
+    const host = new URL(input.trim()).hostname.toLowerCase();
+    return host === 'amap.com' || host.endsWith('.amap.com') || host === 'gaode.com' || host.endsWith('.gaode.com');
+  } catch {
+    return false;
+  }
+}
+
+export function extractAmapPoiId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const fromQuery = parsed.searchParams.get('poiid') || parsed.searchParams.get('id');
+    if (fromQuery && /^[A-Za-z0-9]+$/.test(fromQuery)) return fromQuery;
+    const fromPath = parsed.pathname.match(/\/place\/([A-Za-z0-9]+)/);
+    return fromPath?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** 高德 `position=lng,lat`（GCJ-02）。 */
+export function extractAmapPosition(url: string): { lat: number; lng: number } | null {
+  try {
+    const parsed = new URL(url);
+    const raw = parsed.searchParams.get('position') || parsed.searchParams.get('to') || parsed.searchParams.get('from');
+    if (!raw) return null;
+    const [lngPart, latPart] = raw.split(',');
+    return parseAmapLocation(`${lngPart},${latPart}`);
+  } catch {
+    return null;
+  }
+}
+
+export function extractAmapName(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const name = parsed.searchParams.get('name') || parsed.searchParams.get('poiname');
+    return name?.trim() || null;
+  } catch {
+    return null;
   }
 }

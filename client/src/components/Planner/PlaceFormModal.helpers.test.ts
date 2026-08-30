@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isGoogleMapsUrl } from './PlaceFormModal.helpers'
+import { isAmapShareUrl, isGoogleMapsUrl, isShareMapUrl } from './PlaceFormModal.helpers'
 
 describe('isGoogleMapsUrl', () => {
   it('accepts the short share hosts', () => {
@@ -37,5 +37,18 @@ describe('isGoogleMapsUrl', () => {
 
   it('trims surrounding whitespace before parsing', () => {
     expect(isGoogleMapsUrl('  https://maps.app.goo.gl/abc123  ')).toBe(true)
+  })
+})
+
+describe('isAmapShareUrl', () => {
+  it('accepts amap / gaode hosts', () => {
+    expect(isAmapShareUrl('https://uri.amap.com/marker?position=1,2')).toBe(true)
+    expect(isAmapShareUrl('https://www.amap.com/place/B000')).toBe(true)
+    expect(isShareMapUrl('https://surl.amap.com/x')).toBe(true)
+  })
+
+  it('rejects lookalike hosts', () => {
+    expect(isAmapShareUrl('https://amap.com.evil.example/x')).toBe(false)
+    expect(isShareMapUrl('Eiffel Tower')).toBe(false)
   })
 })

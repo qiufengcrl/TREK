@@ -10,9 +10,10 @@ import { resolveTileUrl } from '../utils/tileUrl'
 export function useTileUrl(fallback: string, ignoreUserTemplate = false): string {
   const template = useSettingsStore((s) => s.settings.map_tile_url)
   const cartoKey = useSettingsStore((s) => s.settings.carto_api_key)
+  const tiandituKey = useSettingsStore((s) => s.settings.tianditu_api_key)
   return useMemo(
-    () => resolveTileUrl(ignoreUserTemplate ? '' : template, fallback, cartoKey),
-    [template, fallback, cartoKey, ignoreUserTemplate]
+    () => resolveTileUrl(ignoreUserTemplate ? '' : template, fallback, cartoKey, tiandituKey),
+    [template, fallback, cartoKey, tiandituKey, ignoreUserTemplate]
   )
 }
 

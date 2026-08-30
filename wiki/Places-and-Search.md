@@ -17,7 +17,9 @@ Type in the search box at the top of the form. After 2 or more characters, with 
 
 ### With an Amap (Gaode) key
 
-> **Admin:** For installs in China, set a 高德 **Web 服务** key in **Admin → Settings → API Keys**, or `AMAP_API_KEY` in the environment. When it is present, place search, autocomplete, details and reverse geocoding go to Amap first. Coordinates are converted from GCJ-02 to WGS-84 so pins sit correctly on OpenStreetMap / Carto tiles.
+> **Admin:** For installs in China, set a 高德 **Web 服务** key in **Admin → Settings → API Keys**, or `AMAP_API_KEY` in the environment. Do **not** put an Amap key in the Google field.
+
+When an Amap key is present, place search, autocomplete, details and reverse geocoding try **Amap first**. An empty result or an upstream error falls through to Google (if that key is set) and then to Nominatim. Place ids stay provider-specific (`amap:…`, Google, `node:…`). Coordinates are converted from GCJ-02 to WGS-84 so pins sit correctly on OpenStreetMap / Carto / Tianditu tiles.
 
 ### With a Google Maps API key
 
@@ -57,9 +59,13 @@ Pictures are copied to your own server and served from there — nothing is load
 
 The column is desktop-only; the mobile place sheet is unchanged.
 
-## Pasting a Google Maps URL
+## Pasting a Google Maps or Amap URL
 
-Paste a `maps.app.goo.gl/…`, `goo.gl/maps/…`, or `maps.google.*/…` URL directly into the search box and press the search button. TREK resolves it server-side and populates the name, address, and coordinates.
+Paste a `maps.app.goo.gl/…`, `goo.gl/maps/…`, `maps.google.*/…`, `uri.amap.com/…`, or `surl.amap.com/…` URL directly into the search box and press the search button. TREK resolves it server-side and populates the name, address, and coordinates. Amap share coordinates are converted from GCJ-02 to WGS-84.
+
+## Map tiles in China
+
+Settings → Map includes a **Tianditu (天地图)** preset (WGS-84 raster). It needs a browser `tk` from [console.tianditu.gov.cn](https://console.tianditu.gov.cn/) — set it in that same panel, or as `TIANDITU_API_KEY`. A day plan can also be opened in the Amap app via **Open in Amap**.
 
 ## Entering coordinates manually
 

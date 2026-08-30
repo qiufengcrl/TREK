@@ -19,7 +19,8 @@ import { escapeHtml } from '@trek/shared'
 import type { Day, Reservation, RouteVia } from '../../types'
 import { POI_CATEGORY_BY_KEY, type Poi } from './poiCategories'
 import { resolveTrackColor, hasManualTrackColor } from './trackColors'
-import { CARTO_LIGHT, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, SATELLITE_TILE_URL, SATELLITE_TILE_ATTRIBUTION, SATELLITE_TILE_MAXZOOM } from '../../constants/mapDefaults'
+import { CARTO_LIGHT, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, SATELLITE_TILE_URL, SATELLITE_TILE_ATTRIBUTION, SATELLITE_TILE_MAXZOOM, TIANDITU_ATTRIBUTION, TIANDITU_SUBDOMAINS } from '../../constants/mapDefaults'
+import { isTiandituTileUrl, tiandituLabelUrl } from '../../utils/tileUrl'
 import { useSettingsStore } from '../../store/settingsStore'
 import { MapLayerSwitcher } from './MapLayerSwitcher'
 import { computeMapViewport, TILE_SIZE_RASTER, type ViewportPadding } from '../../utils/mapViewport'
@@ -830,15 +831,29 @@ export const MapView = memo(function MapView({
     >
       {/* key remounts the layer on switch, else attribution/maxZoom stick at mount-time values. */}
       <TileLayer
-        key={isSatellite ? 'satellite' : 'default'}
+        key={isSatellite ? 'satellite' : tileUrl}
         url={isSatellite ? SATELLITE_TILE_URL : tileUrl}
-        attribution={isSatellite ? SATELLITE_TILE_ATTRIBUTION : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
+        attribution={isSatellite ? SATELLITE_TILE_ATTRIBUTION : (isTiandituTileUrl(tileUrl) ? TIANDITU_ATTRIBUTION : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')}
         maxZoom={isSatellite ? SATELLITE_TILE_MAXZOOM : 19}
+        subdomains={(!isSatellite && isTiandituTileUrl(tileUrl)) ? TIANDITU_SUBDOMAINS : 'abc'}
         keepBuffer={8}
         updateWhenZooming={false}
         updateWhenIdle={true}
         referrerPolicy="strict-origin-when-cross-origin"
       />
+      {!isSatellite && tiandituLabelUrl(tileUrl) && (
+        <TileLayer
+          key={`${tileUrl}-labels`}
+          url={tiandituLabelUrl(tileUrl)!}
+          attribution={TIANDITU_ATTRIBUTION}
+          maxZoom={19}
+          subdomains={TIANDITU_SUBDOMAINS}
+          keepBuffer={8}
+          updateWhenZooming={false}
+          updateWhenIdle={true}
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      )}
 
       <MapController center={center} zoom={zoom} />
       <BoundsController places={dayPlaces.length > 0 ? dayPlaces : places} routeCoords={dayPlaces.length > 0 ? routeCoords : []} fitKey={fitKey} paddingOpts={paddingOpts} framedOnMount={initialView.framed} />

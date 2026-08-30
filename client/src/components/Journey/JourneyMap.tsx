@@ -2,8 +2,8 @@ import { useEffect, useRef, useImperativeHandle, useCallback, type Ref } from 'r
 import L from 'leaflet'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useCartoApiKey } from '../../hooks/useTileUrl'
-import { resolveTileUrl } from '../../utils/tileUrl'
-import { CARTO_DARK, CARTO_VOYAGER } from '../../constants/mapDefaults'
+import { isTiandituTileUrl, resolveTileUrl, tiandituLabelUrl } from '../../utils/tileUrl'
+import { CARTO_DARK, CARTO_VOYAGER, TIANDITU_ATTRIBUTION, TIANDITU_SUBDOMAINS } from '../../constants/mapDefaults'
 import { escapeHtml, type JourneyTrack } from '@trek/shared'
 
 export interface MapMarkerItem {
@@ -154,6 +154,7 @@ function JourneyMap(
   const mapTileUrl = useSettingsStore(s => s.settings.map_tile_url)
   const storedCartoKey = useCartoApiKey()
   const cartoKey = cartoApiKey || storedCartoKey
+  const tiandituKey = useSettingsStore(s => s.settings.tianditu_api_key)
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markersRef = useRef<Map<string, L.Marker>>(new Map())
@@ -232,9 +233,12 @@ function JourneyMap(
     })
     mapRef.current = map
 
-    L.tileLayer(resolveTileUrl(mapTileUrl, dark ? CARTO_DARK : CARTO_VOYAGER, cartoKey), {
+    const resolvedTiles = resolveTileUrl(mapTileUrl, dark ? CARTO_DARK : CARTO_VOYAGER, cartoKey, tiandituKey)
+    const tianditu = isTiandituTileUrl(resolvedTiles)
+    L.tileLayer(resolvedTiles, {
       maxZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: tianditu ? TIANDITU_ATTRIBUTION : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      subdomains: tianditu ? TIANDITU_SUBDOMAINS : 'abc',
       referrerPolicy: 'strict-origin-when-cross-origin',
       // Leaflet defaults updateWhenIdle:true on mobile (waits for pan to settle
       // before loading tiles). On the journey mobile combined view we flyTo
@@ -243,6 +247,17 @@ function JourneyMap(
       updateWhenIdle: false,
       keepBuffer: 4,
     } as any).addTo(map)
+    const labels = tiandituLabelUrl(resolvedTiles)
+    if (labels) {
+      L.tileLayer(labels, {
+        maxZoom: 18,
+        attribution: TIANDITU_ATTRIBUTION,
+        subdomains: TIANDITU_SUBDOMAINS,
+        referrerPolicy: 'strict-origin-when-cross-origin',
+        updateWhenIdle: false,
+        keepBuffer: 4,
+      } as any).addTo(map)
+    }
 
     const items = buildMarkerItems(entries)
     itemsRef.current = items
@@ -339,7 +354,7 @@ function JourneyMap(
       mapRef.current = null
       markersRef.current.clear()
     }
-  }, [entries, stableTrail, stableTracks, dark, mapTileUrl, cartoKey, fullScreen, paddingBottom])
+  }, [entries, stableTrail, stableTracks, dark, mapTileUrl, cartoKey, tiandituKey, fullScreen, paddingBottom])
 
   // Photo layer (#1614). Its own effect on purpose: photos arriving must not tear
   // down and rebuild the map the way the entry effect does. Redrawn on zoom and
@@ -382,7 +397,7 @@ function JourneyMap(
       photoLayerRef.current?.remove()
       photoLayerRef.current = null
     }
-  }, [photos, entries, stableTrail, stableTracks, dark, mapTileUrl, cartoKey, fullScreen, paddingBottom])
+  }, [photos, entries, stableTrail, stableTracks, dark, mapTileUrl, cartoKey, tiandituKey, fullScreen, paddingBottom])
 
   // react to activeMarkerId prop changes — runs after map is built
   useEffect(() => {

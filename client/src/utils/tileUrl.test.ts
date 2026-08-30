@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeTileUrl, withTileApiKey, stripTileApiKey, resolveTileUrl } from './tileUrl'
+import { normalizeTileUrl, withTileApiKey, withTiandituKey, stripTileApiKey, resolveTileUrl, tiandituLabelUrl } from './tileUrl'
 
 describe('normalizeTileUrl', () => {
   it('drops the {s} placeholder from an OSM template', () => {
@@ -170,5 +170,13 @@ describe('resolveTileUrl', () => {
     // A self-hosted template reaches the network without the key, even when the
     // fallback would have been CARTO.
     expect(resolveTileUrl(SELF_HOSTED, CARTO, 'abc123')).toBe(SELF_HOSTED)
+  })
+
+  it('appends a Tianditu tk and builds the label overlay', () => {
+    const vec = 'https://t{s}.tianditu.gov.cn/DataServer?T=vec_w&x={x}&y={y}&l={z}'
+    expect(withTiandituKey(vec, 'tk-1')).toBe(`${vec}&tk=tk-1`)
+    expect(resolveTileUrl(vec, OSM, null, 'tk-1')).toBe(`${vec}&tk=tk-1`)
+    expect(tiandituLabelUrl(vec)).toContain('T=cva_w')
+    expect(stripTileApiKey(`${vec}&tk=tk-1`)).toBe(vec)
   })
 })

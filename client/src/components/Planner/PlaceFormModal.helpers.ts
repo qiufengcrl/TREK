@@ -21,6 +21,19 @@ export interface PlaceFormData {
   image_url?: string
 }
 
+export function isAmapShareUrl(input: string): boolean {
+  try {
+    const host = new URL(input.trim()).hostname.toLowerCase()
+    return host === 'amap.com' || host.endsWith('.amap.com') || host === 'gaode.com' || host.endsWith('.gaode.com')
+  } catch {
+    return false
+  }
+}
+
+export function isShareMapUrl(input: string): boolean {
+  return isGoogleMapsUrl(input) || isAmapShareUrl(input)
+}
+
 export function isGoogleMapsUrl(input: string): boolean {
   try {
     const { hostname, pathname } = new URL(input.trim())
