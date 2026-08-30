@@ -100,7 +100,7 @@ export default function PlPlaceSearch({ planner, locationBias, onPick, onResolvi
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const trimmed = query.trim()
-    if (trimmed.length < 2 || isGoogleMapsUrl(trimmed) || COORD_RE.test(trimmed)) {
+    if (trimmed.length < 2 || isShareMapUrl(trimmed) || COORD_RE.test(trimmed)) {
       setSuggestions([])
       return
     }
