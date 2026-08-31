@@ -19,7 +19,7 @@ Type in the search box at the top of the form. After 2 or more characters, with 
 
 > **Admin:** For installs in China, set a 高德 **Web 服务** key in **Admin → Settings → API Keys**, or `AMAP_API_KEY` in the environment. Do **not** put an Amap key in the Google field.
 
-When an Amap key is present, place search, autocomplete, details and reverse geocoding try **Amap first**. An empty result or an upstream error falls through to Google (if that key is set) and then to Nominatim. Place ids stay provider-specific (`amap:…`, Google, `node:…`). Coordinates are converted from GCJ-02 to WGS-84 so pins sit correctly on OpenStreetMap / Carto / Tianditu tiles.
+When an Amap key is present, place search, autocomplete, details and reverse geocoding try **Amap first**. An empty result or an upstream error falls through directly to Nominatim — Google is skipped, because it is often unreachable from mainland China. Without an Amap key, the chain remains Google (if configured) and then Nominatim. Place ids stay provider-specific (`amap:…`, Google, `node:…`). Coordinates are converted from GCJ-02 to WGS-84 so pins sit correctly on OpenStreetMap / Carto / Tianditu tiles.
 
 ### With a Google Maps API key
 

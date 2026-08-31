@@ -1298,7 +1298,7 @@ describe('searchPlaces (fetch stubbed)', () => {
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('places.googleapis.com');
   });
 
-  it('MAPS-038b: empty Amap results fall through to Google', async () => {
+  it('MAPS-038b: empty Amap results skip Google and fall through to Nominatim', async () => {
     mockInstanceGet.mockImplementation((key: unknown) =>
       key === 'amap_api_key' ? { value: 'amap-secret' } : key === 'maps_api_key' ? { value: 'google-key' } : undefined,
     );
@@ -1309,20 +1309,21 @@ describe('searchPlaces (fetch stubbed)', () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          places: [{ id: 'gid1', displayName: { text: 'Eiffel Tower' }, formattedAddress: 'Paris' }],
-        }),
+        json: async () => [
+          { osm_type: 'node', osm_id: '1', lat: '48.8', lon: '2.3', display_name: 'Paris, France', name: 'Paris' },
+        ],
       });
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await svc.searchPlaces(1, 'Eiffel');
-    expect(result.source).toBe('google');
-    expect((result.places[0] as { google_place_id?: string }).google_place_id).toBe('gid1');
+    expect(result.source).toBe('openstreetmap');
+    expect((result.places[0] as { name: string }).name).toBe('Paris');
     expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
-    expect(String(fetchMock.mock.calls[1][0])).toContain('places.googleapis.com');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('nominatim');
+    expect(fetchMock.mock.calls.every((c) => !String(c[0]).includes('places.googleapis.com'))).toBe(true);
   });
 
-  it('MAPS-038c: an Amap error falls through to Google', async () => {
+  it('MAPS-038c: an Amap error skips Google and falls through to Nominatim', async () => {
     mockInstanceGet.mockImplementation((key: unknown) =>
       key === 'amap_api_key' ? { value: 'amap-secret' } : key === 'maps_api_key' ? { value: 'google-key' } : undefined,
     );
@@ -1334,16 +1335,17 @@ describe('searchPlaces (fetch stubbed)', () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          places: [{ id: 'gid1', displayName: { text: 'Louvre' } }],
-        }),
+        json: async () => [
+          { osm_type: 'node', osm_id: '2', lat: '48.86', lon: '2.33', display_name: 'Louvre, Paris', name: 'Louvre' },
+        ],
       });
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await svc.searchPlaces(1, 'Louvre');
     errorSpy.mockRestore();
-    expect(result.source).toBe('google');
-    expect((result.places[0] as { google_place_id?: string }).google_place_id).toBe('gid1');
+    expect(result.source).toBe('openstreetmap');
+    expect((result.places[0] as { name: string }).name).toBe('Louvre');
+    expect(fetchMock.mock.calls.every((c) => !String(c[0]).includes('places.googleapis.com'))).toBe(true);
   });
 
   it('MAPS-038d: forwards locationBias to Amap as a GCJ location', async () => {
@@ -1626,7 +1628,7 @@ describe('autocompletePlaces (fetch stubbed)', () => {
     expect(result.suggestions[0].placeId).toBe('node:1');
   });
 
-  it('MAPS-081a: empty Amap autocomplete falls through to Google', async () => {
+  it('MAPS-081a: empty Amap autocomplete skips Google and falls through to Nominatim', async () => {
     mockInstanceGet.mockImplementation((key: unknown) =>
       key === 'amap_api_key' ? { value: 'amap-secret' } : key === 'maps_api_key' ? { value: 'google-key' } : undefined,
     );
@@ -1637,23 +1639,17 @@ describe('autocompletePlaces (fetch stubbed)', () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          suggestions: [
-            {
-              placePrediction: {
-                placeId: 'ChIJ1234',
-                structuredFormat: { mainText: { text: 'Eiffel Tower' }, secondaryText: { text: 'Paris' } },
-              },
-            },
-          ],
-        }),
+        json: async () => [
+          { osm_type: 'node', osm_id: '1', lat: '48.8', lon: '2.3', display_name: 'Paris, France', name: 'Paris' },
+        ],
       });
     vi.stubGlobal('fetch', fetchMock);
     const result = await svc.autocompletePlaces(1, 'Eiffel');
-    expect(result.source).toBe('google');
-    expect(result.suggestions[0].placeId).toBe('ChIJ1234');
+    expect(result.source).toBe('nominatim');
+    expect(result.suggestions[0].mainText).toBe('Paris');
     expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
-    expect(String(fetchMock.mock.calls[1][0])).toContain('places.googleapis.com');
+    expect(String(fetchMock.mock.calls[1][0])).toContain('nominatim');
+    expect(fetchMock.mock.calls.every((c) => !String(c[0]).includes('places.googleapis.com'))).toBe(true);
   });
 
   it('MAPS-081b: an Amap autocomplete error falls through to Nominatim when there is no Google key', async () => {

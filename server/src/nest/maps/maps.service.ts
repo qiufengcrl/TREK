@@ -1535,7 +1535,7 @@ export class MapsService {
     }
   }
 
-  // ── Search places (Google or Nominatim fallback) ───────────────────────────
+  // ── Search places (Amap → Nominatim, or Google → Nominatim) ────────────────
 
   async searchPlaces(
     userId: number,
@@ -1558,7 +1558,9 @@ export class MapsService {
 
     const { key: apiKey, source: keySource } = this.resolveMapsKey(userId);
 
-    if (!apiKey) {
+    // When an Amap key is configured, skip Google — it is unreachable from many
+    // mainland networks and only adds latency before Nominatim.
+    if (!apiKey || amapKey) {
       const places = await this.searchNominatim(query, lang);
       return { places, source: 'openstreetmap' };
     }
@@ -1623,7 +1625,7 @@ export class MapsService {
     return { places, source: 'openstreetmap' };
   }
 
-  // ── Autocomplete (Google or Nominatim fallback) ────────────────────────────
+  // ── Autocomplete (Amap → Nominatim, or Google → Nominatim) ────────────────
 
   async autocompletePlaces(
     userId: number,
@@ -1650,7 +1652,7 @@ export class MapsService {
 
     const { key: apiKey, source: keySource } = this.resolveMapsKey(userId);
 
-    if (!apiKey) {
+    if (!apiKey || amapKey) {
       return this.autocompleteNominatim(input, lang);
     }
 
