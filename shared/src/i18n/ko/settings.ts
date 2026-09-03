@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': '지도',
   'settings.mapTemplate': '지도 템플릿',
   'settings.mapTemplatePlaceholder.select': '템플릿 선택...',
-  'settings.mapDefaultHint': '비워두면 OpenStreetMap (기본값) 사용',
+  'settings.mapDefaultHint': "비워 두면 앱 기본 지도 사용 (Amap 키가 있으면 Amap, 없으면 OpenFreeMap)",
   'settings.mapHint': '지도 타일 URL 템플릿',
   'settings.mapProvider': '지도 공급자',
   'settings.mapProviderHint': '여행 플래너 및 Journey 지도에 영향을 줍니다. Atlas는 항상 Leaflet을 사용합니다.',
@@ -327,7 +327,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': '마지막 사용',
   'settings.passkey.neverUsed': '사용한 적 없음',
   'settings.mapPoiPill': '지도에서 장소 탐색',
-  'settings.mapPoiPillHint': '여행 지도에 카테고리 칩을 표시하여 OpenStreetMap에서 주변 음식점, 숙소 등을 찾아보세요.',
+  'settings.mapPoiPillHint': '여행 지도에 카테고리 칩을 표시하여 주변 음식점, 숙소 등을 찾아보세요. 키가 있으면 Amap, 없으면 OpenStreetMap을 사용합니다.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     '자체 호스팅한 AirTrail을 연결하여 항공편을 가져오고 동기화하세요. AirTrail의 설정 → 보안에서 API 키를 생성하세요.',

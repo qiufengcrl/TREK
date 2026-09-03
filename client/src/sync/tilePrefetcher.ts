@@ -18,11 +18,12 @@
  * {s} (subdomain) and {r} (retina suffix).
  */
 
+import { toAmap } from '@trek/shared'
 import type { Place } from '../types'
 import { offlineDb, upsertSyncMeta } from '../db/offlineDb'
 import { isAuthed } from './authGate'
-import { isVectorStyle, normalizeTileUrl, resolveTileUrl, withTileApiKey } from '../utils/tileUrl'
-import { OFM_POSITRON } from '../constants/mapDefaults'
+import { isAmapTileUrl, isVectorStyle, normalizeTileUrl, resolveTileUrl, withTileApiKey } from '../utils/tileUrl'
+import { OFM_POSITRON, AMAP_VEC, AMAP_SAT_LABEL } from '../constants/mapDefaults'
 import { clearVectorCache, prefetchVectorForPlaces } from './glPrefetcher'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -49,19 +50,32 @@ export const MAX_TILES = Math.floor((180 * 1024) / AVG_TILE_KB) // = 12288
  */
 export const TILE_CONCURRENCY = 6
 
+/** Amap CDN is quota-sensitive; keep the prefetch quieter than OSM/CARTO. */
+export const TILE_CONCURRENCY_AMAP = 3
+
 /** Name of the Workbox runtime cache holding map tiles (see vite.config.js). */
 const TILE_CACHE = 'map-tiles'
 
 const DEFAULT_TILE_URL = OFM_POSITRON
 
+/** Same fallback the planner uses: Amap raster when the instance has a key. */
+export function prefetchFallback(hasAmapKey: boolean): string {
+  return hasAmapKey ? AMAP_VEC : DEFAULT_TILE_URL
+}
+
 /**
- * Must stay identical to Leaflet's `subdomains` default ('abc'), because the
- * index is taken modulo the list length: a fourth entry here shifts the host
- * for most tiles away from the one the TileLayer will ask for, so the prefetch
- * fills the cache under URLs the map never requests. It also produced the dead
- * d.tile.openstreetmap.org lookups in #1733.
+ * Must stay identical to Leaflet's `subdomains` for the same template, because
+ * the index is taken modulo the list length: a mismatched list here shifts the
+ * host for most tiles away from the one the TileLayer will ask for, so the
+ * prefetch fills the cache under URLs the map never requests. It also produced
+ * the dead d.tile.openstreetmap.org lookups in #1733.
  */
-const SUBDOMAINS = ['a', 'b', 'c']
+const SUBDOMAINS_DEFAULT = ['a', 'b', 'c']
+const SUBDOMAINS_AMAP = ['1', '2', '3', '4']
+
+function subdomainsForTemplate(template: string): string[] {
+  return isAmapTileUrl(template) ? SUBDOMAINS_AMAP : SUBDOMAINS_DEFAULT
+}
 
 /**
  * Pick the subdomain from the tile coordinates, the way Leaflet does.
@@ -70,8 +84,8 @@ const SUBDOMAINS = ['a', 'b', 'c']
  * different host on every run, which both defeats the cache lookup below and
  * stores the tile once per host.
  */
-function subdomainFor(x: number, y: number): string {
-  return SUBDOMAINS[Math.abs(x + y) % SUBDOMAINS.length]
+function subdomainFor(x: number, y: number, subdomains: string[]): string {
+  return subdomains[Math.abs(x + y) % subdomains.length]
 }
 
 // ── Tile math ──────────────────────────────────────────────────────────────────
@@ -139,6 +153,19 @@ export function computeBbox(places: Place[], paddingFraction = 0.1): TileBbox | 
  * Count tiles that would be fetched across the zoom range for a bbox.
  * Used to enforce the size guard without actually fetching.
  */
+/** Amap XYZ is indexed in GCJ; shift a WGS place bbox before tile math. */
+export function bboxForTileIndex(bbox: TileBbox, template: string): TileBbox {
+  if (!isAmapTileUrl(template)) return bbox
+  const sw = toAmap(bbox.minLat, bbox.minLng)
+  const ne = toAmap(bbox.maxLat, bbox.maxLng)
+  return {
+    minLat: Math.min(sw.lat, ne.lat),
+    maxLat: Math.max(sw.lat, ne.lat),
+    minLng: Math.min(sw.lng, ne.lng),
+    maxLng: Math.max(sw.lng, ne.lng),
+  }
+}
+
 export function countTiles(bbox: TileBbox, minZoom: number, maxZoom: number): number {
   let total = 0
   for (let z = minZoom; z <= maxZoom; z++) {
@@ -154,22 +181,29 @@ export function countTiles(bbox: TileBbox, minZoom: number, maxZoom: number): nu
 
 /**
  * Build the concrete tile URL for given z/x/y from a Leaflet template.
- * Rotates through subdomains (a–c).
+ * Rotates through subdomains (a–c, or 1–4 for Amap).
  *
  * The template is normalized first: this function is also reached with a raw
  * admin default rather than the value from the settings store, so the OSM
  * sharding rewrite has to happen here too.
  *
- * The CARTO key is appended here as well, and it has to be: the Workbox cache is
- * keyed on the whole URL including the query, so a tile prefetched without the
- * key is a tile the map never asks for.
+ * The CARTO key is appended here as well, and it has to be: the Workbox cache
+ * is keyed on the whole URL including the query, so a tile prefetched without
+ * the key is a tile the map never asks for.
  */
-export function buildTileUrl(template: string, z: number, x: number, y: number, cartoKey?: string): string {
-  return withTileApiKey(normalizeTileUrl(template), cartoKey)
+export function buildTileUrl(
+  template: string,
+  z: number,
+  x: number,
+  y: number,
+  cartoKey?: string,
+): string {
+  const normalized = withTileApiKey(normalizeTileUrl(template), cartoKey)
+  return normalized
     .replace('{z}', String(z))
     .replace('{x}', String(x))
     .replace('{y}', String(y))
-    .replace('{s}', subdomainFor(x, y))
+    .replace('{s}', subdomainFor(x, y, subdomainsForTemplate(normalized)))
     .replace('{r}', '')
 }
 
@@ -235,7 +269,7 @@ export async function prefetchTiles(
   if (!navigator.onLine) return 0
   if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return 0
 
-  const coords = enumerateTiles(bbox, minZoom, maxZoom)
+  const coords = enumerateTiles(bboxForTileIndex(bbox, tileUrlTemplate), minZoom, maxZoom)
   if (coords.length === 0) return 0
 
   // Checking Cache Storage from here is far cheaper than letting the request
@@ -245,6 +279,13 @@ export async function prefetchTiles(
 
   let cursor = 0
   let fetched = 0
+  const concurrency = isAmapTileUrl(tileUrlTemplate) ? TILE_CONCURRENCY_AMAP : TILE_CONCURRENCY
+
+  // Amap satellite imagery has no labels; the live map draws style=8 on top, so
+  // prefetch the companion layer under the same z/x/y set or offline satellite
+  // would look blank of place names.
+  const labelTemplate =
+    isAmapTileUrl(tileUrlTemplate) && /style=6/.test(tileUrlTemplate) ? AMAP_SAT_LABEL : null
 
   async function worker(): Promise<void> {
     while (cursor < coords.length) {
@@ -254,16 +295,23 @@ export async function prefetchTiles(
       const [z, x, y] = coords[cursor++]
       const url = buildTileUrl(tileUrlTemplate, z, x, y, cartoKey)
 
-      if (cache && (await cache.match(url))) continue
+      if (!(cache && (await cache.match(url)))) {
+        await fetch(url, { mode: 'no-cors' }).catch(() => {})
+        fetched++
+      }
 
-      // The SW CacheFirst handler stores the response.
-      await fetch(url, { mode: 'no-cors' }).catch(() => {})
-      fetched++
+      if (labelTemplate) {
+        const labelUrl = buildTileUrl(labelTemplate, z, x, y, cartoKey)
+        if (!(cache && (await cache.match(labelUrl)))) {
+          await fetch(labelUrl, { mode: 'no-cors' }).catch(() => {})
+          fetched++
+        }
+      }
     }
   }
 
   await Promise.all(
-    Array.from({ length: Math.min(TILE_CONCURRENCY, coords.length) }, worker),
+    Array.from({ length: Math.min(concurrency, coords.length) }, worker),
   )
 
   return fetched
@@ -323,10 +371,11 @@ export async function prefetchTilesForTrip(
   tileUrlTemplate?: string,
   force = false,
   cartoKey?: string,
+  fallback: string = DEFAULT_TILE_URL,
 ): Promise<void> {
   // Resolved rather than taken raw, so a keyless CARTO template pre-downloads the
   // basemap the map will actually draw instead of a few thousand watermarks.
-  const template = resolveTileUrl(tileUrlTemplate, DEFAULT_TILE_URL, cartoKey)
+  const template = resolveTileUrl(tileUrlTemplate, fallback, cartoKey)
   const bbox = computeBbox(places)
   if (!bbox) return
 

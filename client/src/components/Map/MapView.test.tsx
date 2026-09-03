@@ -5,8 +5,10 @@ import { act, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { resetAllStores } from '../../../tests/helpers/store'
 import { buildPlace, buildReservation } from '../../../tests/helpers/factories'
-import { MAP_MAX_ZOOM } from '../../constants/mapDefaults'
+import { AMAP_TILE_MAXZOOM, AMAP_VEC, MAP_MAX_ZOOM } from '../../constants/mapDefaults'
+import { toAmap } from '@trek/shared'
 import { useAuthStore } from '../../store/authStore'
+import { useSettingsStore } from '../../store/settingsStore'
 import { CATEGORY_ICON_MAP } from '../shared/categoryIcons'
 import * as photoService from '../../services/photoService'
 
@@ -54,7 +56,15 @@ vi.mock('react-leaflet', () => ({
   MapContainer: ({ children, center, zoom, maxZoom }: any) => (
     <div data-testid="map-container" data-center={JSON.stringify(center)} data-zoom={zoom} data-maxzoom={maxZoom}>{children}</div>
   ),
-  TileLayer: () => <div data-testid="tile-layer" />,
+  TileLayer: ({ url, maxZoom, maxNativeZoom, updateWhenIdle }: any) => (
+    <div
+      data-testid="tile-layer"
+      data-url={url}
+      data-maxzoom={maxZoom}
+      data-maxnativezoom={maxNativeZoom ?? ''}
+      data-updatewhenidle={String(updateWhenIdle)}
+    />
+  ),
   Marker: ({ children, eventHandlers, position, icon, zIndexOffset }: any) => (
     <div
       data-testid="marker"
@@ -253,6 +263,27 @@ describe('MapView', () => {
     // ceiling has to sit on the map because only a GridLayer can contribute one.
     render(<MapView places={[buildMapPlace({ lat: 48.8584, lng: 2.2945 })]} />)
     expect(screen.getByTestId('map-container').getAttribute('data-maxzoom')).toBe(String(MAP_MAX_ZOOM))
+  })
+
+  it('FE-COMP-MAPVIEW-010c: Amap street tiles overzoom native 18 at the map ceiling', () => {
+    render(<MapView tileUrl={AMAP_VEC} />)
+    const layer = screen.getByTestId('tile-layer')
+    expect(layer.getAttribute('data-maxzoom')).toBe(String(MAP_MAX_ZOOM))
+    expect(layer.getAttribute('data-maxnativezoom')).toBe(String(AMAP_TILE_MAXZOOM))
+    expect(layer.getAttribute('data-updatewhenidle')).toBe('false')
+  })
+
+  it('FE-COMP-MAPVIEW-010d: Amap satellite stays attached at map zoom 19', () => {
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, map_base_layer: 'satellite' },
+    })
+    render(<MapView tileUrl={AMAP_VEC} />)
+    const layers = screen.getAllByTestId('tile-layer')
+    expect(layers.length).toBe(2)
+    for (const layer of layers) {
+      expect(layer.getAttribute('data-maxzoom')).toBe(String(MAP_MAX_ZOOM))
+      expect(layer.getAttribute('data-maxnativezoom')).toBe(String(AMAP_TILE_MAXZOOM))
+    }
   })
 
   it('FE-COMP-MAPVIEW-011: renders the route polyline; travel times are no longer drawn on the map', () => {
@@ -625,6 +656,21 @@ describe('MapView explore POIs', () => {
     expect(onPoiClick).toHaveBeenCalledWith(poi)
   })
 
+  it('FE-COMP-MAPVIEW-034b: Amap tiles shift the pin but click still returns the WGS POI', () => {
+    const onPoiClick = vi.fn()
+    const poi = buildPoi({ osm_id: 'node/7', lat: 39.907, lng: 116.391 })
+    render(<MapView pois={[poi]} onPoiClick={onPoiClick} tileUrl={AMAP_VEC} />)
+    const marker = markersWithZ('500')[0]
+    const gcj = toAmap(39.907, 116.391)
+    expect(Number(marker.getAttribute('data-lat'))).toBeCloseTo(gcj.lat, 5)
+    expect(Number(marker.getAttribute('data-lng'))).toBeCloseTo(gcj.lng, 5)
+    fireEvent.click(marker)
+    expect(onPoiClick).toHaveBeenCalledWith(poi)
+    expect(onPoiClick.mock.calls[0][0]).toBe(poi)
+    expect(onPoiClick.mock.calls[0][0].lat).toBe(39.907)
+    expect(onPoiClick.mock.calls[0][0].lng).toBe(116.391)
+  })
+
   it('FE-COMP-MAPVIEW-035: an unknown POI category falls back to grey and draws no glyph', () => {
     render(<MapView pois={[buildPoi({ osm_id: 'node/8', category: 'not-a-category' })]} />)
     const html = iconHtmlOf(markersWithZ('500')[0])
@@ -718,9 +764,12 @@ describe('MapView map event wiring', () => {
   it('FE-COMP-MAPVIEW-046: a map-click handler is attached and detached again', () => {
     const onMapClick = vi.fn()
     const { unmount } = render(<MapView onMapClick={onMapClick} />)
-    expect(mapMock.on).toHaveBeenCalledWith('click', onMapClick)
+    const bound = mapMock.on.mock.calls.find(c => c[0] === 'click')?.[1] as ((e: unknown) => void) | undefined
+    expect(bound).toBeTypeOf('function')
+    bound!({ latlng: { lat: 48, lng: 2 } })
+    expect(onMapClick).toHaveBeenCalled()
     unmount()
-    expect(mapMock.off).toHaveBeenCalledWith('click', onMapClick)
+    expect(mapMock.off).toHaveBeenCalledWith('click', bound)
   })
 
   it('FE-COMP-MAPVIEW-047: without a click handler nothing is bound', () => {
@@ -731,9 +780,23 @@ describe('MapView map event wiring', () => {
   it('FE-COMP-MAPVIEW-048: a context-menu handler is attached and detached again', () => {
     const onMapContextMenu = vi.fn()
     const { unmount } = render(<MapView onMapContextMenu={onMapContextMenu} />)
-    expect(mapMock.on).toHaveBeenCalledWith('contextmenu', onMapContextMenu)
+    const bound = mapMock.on.mock.calls.find(c => c[0] === 'contextmenu')?.[1] as ((e: unknown) => void) | undefined
+    expect(bound).toBeTypeOf('function')
+    bound!({ latlng: { lat: 48, lng: 2 } })
+    expect(onMapContextMenu).toHaveBeenCalled()
     unmount()
-    expect(mapMock.off).toHaveBeenCalledWith('contextmenu', onMapContextMenu)
+    expect(mapMock.off).toHaveBeenCalledWith('contextmenu', bound)
+  })
+
+  it('FE-COMP-MAPVIEW-048b: a click on Amap tiles is converted back to WGS before the caller', () => {
+    const onMapClick = vi.fn()
+    render(<MapView onMapClick={onMapClick} tileUrl={AMAP_VEC} />)
+    const bound = mapMock.on.mock.calls.find(c => c[0] === 'click')?.[1] as ((e: unknown) => void) | undefined
+    const gcj = toAmap(39.907, 116.391)
+    bound!({ latlng: { lat: gcj.lat, lng: gcj.lng } })
+    const evt = onMapClick.mock.calls[0][0] as { latlng: { lat: number; lng: number } }
+    expect(evt.latlng.lat).toBeCloseTo(39.907, 4)
+    expect(evt.latlng.lng).toBeCloseTo(116.391, 4)
   })
 
   it('FE-COMP-MAPVIEW-049: changing the center prop moves the camera there', () => {

@@ -263,6 +263,16 @@ describe('MDaySheet', () => {
     expect(url).toContain('/48.2,16.35')
   })
 
+  it('FE-MOB-DAYSH-016b: exports the same bookended stops to Amap', async () => {
+    await renderSheet()
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Amap' }))
+    expect(window.open).toHaveBeenCalledTimes(1)
+    const url = String(vi.mocked(window.open).mock.calls[0][0])
+    expect(url).toMatch(/^https:\/\/uri\.amap\.com\/navigation\?/)
+    expect(url).toContain('16.36,48.21')
+    expect(url).toContain('16.35,48.2')
+  })
+
   it('FE-MOB-DAYSH-017: optimizes the day order and toasts the hotel variant', async () => {
     const { planner } = await renderSheet()
     fireEvent.click(screen.getByRole('button', { name: 'Optimize' }))

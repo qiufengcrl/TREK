@@ -34,13 +34,14 @@ When Leaflet is selected, pick a preset or enter a custom tile URL.
 | OpenStreetMap DE | `https://tile.openstreetmap.de/{z}/{x}/{y}.png` |
 | OpenFreeMap Positron | `https://tiles.openfreemap.org/styles/positron` |
 | OpenFreeMap Bright | `https://tiles.openfreemap.org/styles/bright` |
+| Amap (Gaode) | `https://webrd0{s}.is.autonavi.com/appmaptile?…` (GCJ-02) |
 | CartoDB Light (needs a key) | `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png` |
 | CartoDB Dark (needs a key) | `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png` |
 | Stadia Smooth | `https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png` |
 
-**OpenFreeMap Positron is the default** and is what every map falls back to when the field is empty. It needs no key,
-no account and has no request limit, and it is a MapLibre *style* rather than an XYZ template — TREK renders it with
-MapLibre inside the Leaflet map, so markers, routes and clusters behave exactly as before.
+**OpenFreeMap Positron is the default** when the field is empty and no Amap Web-service key is configured. With an Amap key, the trip planner falls back to the **Amap (Gaode)** raster preset instead (mainland pins are shifted WGS → GCJ for display). OpenFreeMap needs no key, no account and has no request limit, and it is a MapLibre *style* rather than an XYZ template — TREK renders it with MapLibre inside the Leaflet map, so markers, routes and clusters behave exactly as before.
+
+> **Amap tiles:** the built-in Amap preset uses Autonavi’s public raster CDN (`*.is.autonavi.com`), not the official JS API tile endpoint that binds a Web key. It is convenient for self-hosted China installs but is **unofficial** — ToS, availability and Referer checks can change without notice. Prefer it when you want Chinese labels on a keyed install; for production compliance, plan a path to Amap’s documented tile product.
 
 You can also type any XYZ tile URL, or the URL of any MapLibre style document, directly into the text field.
 

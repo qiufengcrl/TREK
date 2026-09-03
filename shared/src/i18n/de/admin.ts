@@ -88,11 +88,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Benutzer ohne 2FA müssen die Einrichtung unter Einstellungen abschließen, bevor sie die App nutzen können.',
   'admin.apiKeys': 'API-Schlüssel',
-  'admin.apiKeysHint': 'Optional. Aktiviert erweiterte Ortsdaten wie Fotos und Wetter.',
+  'admin.apiKeysHint': 'Optional. Ein Amap-Schlüssel wird zuerst für Ortssuche, Karten, Routen und Wetter in China genutzt. Ein Google-Schlüssel ergänzt Fotos, Bewertungen und Öffnungszeiten.',
+  'admin.amapKey': 'Amap (Gaode) Web-API-Schlüssel',
+  'admin.amapKeyHintLong': 'Wenn gesetzt, versuchen Ortssuche, Autovervollständigung, Details und Reverse-Geocoding zuerst Amap. Leere oder fehlgeschlagene Ergebnisse fallen auf OpenStreetMap zurück (Google wird übersprungen). Web-Service-Schlüssel unter console.amap.com. Nicht ins Google-Feld eintragen.',
   'admin.mapsKey': 'Google Maps API-Schlüssel',
   'admin.mapsKeyHint': 'Für Ortsuche benötigt. Erstellen unter console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Ohne API Key wird OpenStreetMap für die Ortssuche genutzt. Mit Google API Key können zusätzlich Bilder, Bewertungen und Öffnungszeiten geladen werden. Erstellen unter console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Wird genutzt, wenn kein Amap-Schlüssel gesetzt ist. Ohne Google- oder Amap-Schlüssel sucht OpenStreetMap. Ein Google-Schlüssel kann zusätzlich Fotos, Bewertungen und Öffnungszeiten laden. Erstellen unter console.cloud.google.com.',
   'admin.recommended': 'Empfohlen',
   'admin.weatherKey': 'OpenWeatherMap API-Schlüssel',
   'admin.weatherKeyHint': 'Für Wetterdaten. Kostenlos unter openweathermap.org',

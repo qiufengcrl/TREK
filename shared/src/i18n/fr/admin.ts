@@ -87,11 +87,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     "Les utilisateurs sans 2FA doivent terminer la configuration dans Paramètres avant d'utiliser l'application.",
   'admin.apiKeys': 'Clés API',
-  'admin.apiKeysHint': 'Facultatif. Active les données de lieu étendues comme les photos et la météo.',
+  'admin.apiKeysHint': 'Facultatif. Une clé Amap est utilisée en premier pour la recherche, les tuiles, les itinéraires et la météo en Chine. Une clé Google ajoute photos, notes et horaires.',
+  'admin.amapKey': 'Clé API Web Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Si elle est définie, la recherche, l’autocomplétion, les détails et le géocodage inverse passent d’abord par Amap. Un résultat vide ou une erreur bascule vers OpenStreetMap (Google est ignoré). Clé Web service sur console.amap.com. Ne pas la coller dans le champ Google.',
   'admin.mapsKey': 'Clé API Google Maps',
   'admin.mapsKeyHint': 'Requise pour la recherche de lieux. Obtenez-la sur console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    "Sans clé API, OpenStreetMap est utilisé pour la recherche de lieux. Avec une clé Google API, les photos, notes et horaires d'ouverture peuvent également être chargés. Obtenez-en une sur console.cloud.google.com.",
+  'admin.mapsKeyHintLong': 'Utilisée lorsqu’aucune clé Amap n’est définie. Sans clé Google ou Amap, OpenStreetMap sert à la recherche. Une clé Google peut aussi charger photos, notes et horaires. Obtenez-en une sur console.cloud.google.com.',
   'admin.recommended': 'Recommandé',
   'admin.weatherKey': 'Clé API OpenWeatherMap',
   'admin.weatherKeyHint': 'Pour les données météo. Gratuit sur openweathermap.org',

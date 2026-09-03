@@ -46,6 +46,7 @@ export const collectionPlaceSchema = z.object({
   saved_by: z.number().nullable().optional(),
   name: z.string(),
   description: z.string().nullable().optional(),
+  /** WGS-84 — same CRS as trip `places.lat/lng`. */
   lat: z.number().nullable().optional(),
   lng: z.number().nullable().optional(),
   address: z.string().nullable().optional(),

@@ -88,11 +88,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Gebruikers zonder 2FA moeten de installatie in Instellingen voltooien voordat ze de app kunnen gebruiken.',
   'admin.apiKeys': 'API-sleutels',
-  'admin.apiKeysHint': "Optioneel. Schakelt uitgebreide plaatsgegevens in zoals foto's en weer.",
+  'admin.apiKeysHint': 'Optioneel. Een Amap-sleutel wordt eerst gebruikt voor plaatszoeken, tegels, routes en weer in China. Een Google-sleutel voegt foto’s, beoordelingen en openingstijden toe.',
+  'admin.amapKey': 'Amap (Gaode) web-API-sleutel',
+  'admin.amapKeyHintLong': 'Indien ingesteld proberen plaatszoeken, autocomplete, details en reverse geocoding eerst Amap. Lege of mislukte resultaten vallen terug op OpenStreetMap (Google wordt overgeslagen). Webservice-sleutel op console.amap.com. Niet in het Google-veld plakken.',
   'admin.mapsKey': 'Google Maps API-sleutel',
   'admin.mapsKeyHint': 'Vereist voor het zoeken van plaatsen. Verkrijgbaar op console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    "Zonder API-sleutel wordt OpenStreetMap gebruikt voor het zoeken van plaatsen. Met een Google API-sleutel kunnen ook foto's, beoordelingen en openingstijden worden geladen. Verkrijgbaar op console.cloud.google.com.",
+  'admin.mapsKeyHintLong': 'Wordt gebruikt als er geen Amap-sleutel is. Zonder Google- of Amap-sleutel zoekt OpenStreetMap. Een Google-sleutel kan ook foto’s, beoordelingen en openingstijden laden. Verkrijgbaar op console.cloud.google.com.',
   'admin.recommended': 'Aanbevolen',
   'admin.weatherKey': 'OpenWeatherMap API-sleutel',
   'admin.weatherKeyHint': 'Voor weergegevens. Gratis op openweathermap.org',

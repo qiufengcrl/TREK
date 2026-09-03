@@ -670,6 +670,32 @@ describe('authStore', () => {
       expect(useAuthStore.getState().hasMapsKey).toBe(false);
     });
 
+    it('updateApiKeys reads hasAmapKey from app-config, not the request body', async () => {
+      const updatedUser = buildUser();
+      server.use(
+        http.put('/api/auth/me/api-keys', () => HttpResponse.json({ user: updatedUser })),
+        http.get('/api/auth/app-config', () => HttpResponse.json({ has_amap_key: true })),
+      );
+
+      await useAuthStore.getState().updateApiKeys({ amap_api_key: 'amap-k' });
+      expect(useAuthStore.getState().hasAmapKey).toBe(true);
+
+      server.use(http.get('/api/auth/app-config', () => HttpResponse.json({ has_amap_key: false })));
+      await useAuthStore.getState().updateApiKeys({ amap_api_key: 'still-sending' });
+      expect(useAuthStore.getState().hasAmapKey).toBe(false);
+    });
+
+    it('updateApiKeys keeps the previous hasAmapKey when app-config is unavailable', async () => {
+      useAuthStore.setState({ hasAmapKey: false });
+      server.use(
+        http.put('/api/auth/me/api-keys', () => HttpResponse.json({ user: buildUser() })),
+        http.get('/api/auth/app-config', () => HttpResponse.json({ error: 'down' }, { status: 500 })),
+      );
+
+      await useAuthStore.getState().updateApiKeys({ amap_api_key: 'amap-k' });
+      expect(useAuthStore.getState().hasAmapKey).toBe(false);
+    });
+
     it('updateApiKeys surfaces the server message', async () => {
       server.use(http.put('/api/auth/me/api-keys', () =>
         HttpResponse.json({ error: 'Rejected' }, { status: 400 })));

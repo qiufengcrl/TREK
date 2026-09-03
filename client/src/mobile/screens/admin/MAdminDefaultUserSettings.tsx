@@ -17,6 +17,7 @@ import {
   type GlMapProvider,
 } from '../../../components/Map/glProviders'
 import { useAuthStore } from '../../../store/authStore'
+import { AMAP_VEC } from '../../../constants/mapDefaults'
 import MToggle from '../../components/MToggle'
 import MSegmented from '../../components/MSegmented'
 import { MAdminCard, MAdminCardHead, MAdminField, MAdminInput, MAdminRow } from './MAdminUi'
@@ -24,10 +25,11 @@ import { MSetSelectRow } from '../settings/MSettingsUi'
 import MSetPickerSheet from '../settings/MSetPickerSheet'
 
 const MAP_PRESETS = [
+  { name: 'Amap (Gaode)', url: AMAP_VEC },
   { name: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' },
   { name: 'OpenStreetMap DE', url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png' },
-  // The app default, and a vector style rather than a {z}/{x}/{y} template: no
-  // key, no registration, no request limits.
+  // The app default outside China, and a vector style rather than a {z}/{x}/{y}
+  // template: no key, no registration, no request limits.
   { name: 'OpenFreeMap Positron', url: 'https://tiles.openfreemap.org/styles/positron' },
   { name: 'OpenFreeMap Bright', url: 'https://tiles.openfreemap.org/styles/bright' },
   // CARTO watermarks keyless tiles since 26.08.2026 and issues keys by mail, so

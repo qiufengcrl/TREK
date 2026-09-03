@@ -88,11 +88,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Пользователи без 2FA должны завершить настройку в разделе «Настройки» перед использованием приложения.',
   'admin.apiKeys': 'API-ключи',
-  'admin.apiKeysHint': 'Необязательно. Включает расширенные данные о местах, такие как фото и погода.',
+  'admin.apiKeysHint': 'Необязательно. Ключ Amap используется первым для поиска мест, тайлов, маршрутов и погоды в Китае. Ключ Google добавляет фото, рейтинги и часы работы.',
+  'admin.amapKey': 'Веб-ключ API Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Если задан, поиск мест, автодополнение, детали и обратное геокодирование сначала идут в Amap. Пустой результат или ошибка переходят к OpenStreetMap (Google пропускается). Ключ веб-сервиса: console.amap.com. Не вставляйте его в поле Google.',
   'admin.mapsKey': 'API-ключ Google Maps',
   'admin.mapsKeyHint': 'Необходим для поиска мест. Получите на console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Без API-ключа используется OpenStreetMap для поиска мест. С ключом Google API можно загружать фото, рейтинги и часы работы. Получите ключ на console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Используется, если ключ Amap не задан. Без ключа Google или Amap поиск идёт через OpenStreetMap. Ключ Google также может загружать фото, рейтинги и часы работы. Получите на console.cloud.google.com.',
   'admin.recommended': 'Рекомендуется',
   'admin.weatherKey': 'API-ключ OpenWeatherMap',
   'admin.weatherKeyHint': 'Для данных о погоде. Бесплатно на openweathermap.org',

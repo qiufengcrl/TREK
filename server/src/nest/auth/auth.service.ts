@@ -243,6 +243,7 @@ export class AuthService {
     // question is only about the instance, which is the first two steps of the
     // chain; id 0 matches no row.
     const hasGoogleKey = !!resolveApiKey(this.db, 'maps_api_key', authenticatedUser?.id ?? 0, readEnv().maps.placesApiKey).key;
+    const hasAmapKey = !!resolveApiKey(this.db, 'amap_api_key', authenticatedUser?.id ?? 0, readEnv().maps.amapApiKey).key;
     const oidcDisplayName = readEnv().oidc.displayName ||
       this.db.get<{ value: string }>("SELECT value FROM app_settings WHERE key = 'oidc_display_name'")?.value || null;
     const oidcConfigured = !!(
@@ -288,6 +289,7 @@ export class AuthService {
       version,
       is_prerelease: version.includes('-pre.'),
       has_maps_key: hasGoogleKey,
+      has_amap_key: hasAmapKey,
       oidc_configured: oidcConfigured,
       oidc_display_name: oidcConfigured ? (oidcDisplayName || 'SSO') : undefined,
       require_mfa: requireMfaRow?.value === 'true',

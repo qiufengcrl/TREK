@@ -30,7 +30,7 @@ afterEach(() => { vi.restoreAllMocks() })
 describe('getNavigationTargets', () => {
   it('FE-PLANNER-NAV-001: offers every app that can resolve a place with coordinates', () => {
     const targets = getNavigationTargets(place())
-    expect(targets.map(t => t.id)).toEqual(['google', 'waze', 'apple', 'osm', 'comaps'])
+    expect(targets.map(t => t.id)).toEqual(['google', 'amap', 'waze', 'apple', 'osm', 'comaps'])
     expect(targets[0].label).toBe('Google Maps')
   })
 
@@ -58,7 +58,7 @@ describe('getNavigationTargets', () => {
   it('FE-PLANNER-NAV-004b: an Android phone does not, because nobody there wants it', () => {
     const restore = withUserAgent('Mozilla/5.0 (Linux; Android 15; Pixel 9)')
     try {
-      expect(getNavigationTargets(place()).map(t => t.id)).toEqual(['google', 'waze', 'osm', 'comaps'])
+      expect(getNavigationTargets(place()).map(t => t.id)).toEqual(['google', 'amap', 'waze', 'osm', 'comaps'])
     } finally { restore() }
   })
 
@@ -66,9 +66,9 @@ describe('getNavigationTargets', () => {
     const restore = withUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)')
     try {
       const targets = getNavigationTargets(place())
-      expect(targets.map(t => t.id)).toEqual(['google', 'waze', 'apple', 'osm', 'comaps'])
+      expect(targets.map(t => t.id)).toEqual(['google', 'amap', 'waze', 'apple', 'osm', 'comaps'])
       // q next to ll labels the pin rather than searching blindly.
-      expect(targets[2].url).toBe('https://maps.apple.com/?q=Stephansdom&ll=48.2038,16.3616')
+      expect(targets.find(t => t.id === 'apple')!.url).toBe('https://maps.apple.com/?q=Stephansdom&ll=48.2038,16.3616')
     } finally { restore() }
   })
 
@@ -92,6 +92,7 @@ describe('getNavigationTargets', () => {
     // has nothing to attach to, the same reason Waze and Apple Maps drop out.
     const targets = getNavigationTargets(place({ lat: null, lng: null, name: 'Stephansdom' }))
     expect(targets.map(t => t.id)).not.toContain('comaps')
+    expect(targets.map(t => t.id)).not.toContain('amap')
   })
 
   it('FE-PLANNER-NAV-008: no place at all yields nothing', () => {
@@ -101,7 +102,15 @@ describe('getNavigationTargets', () => {
 
   it('FE-PLANNER-NAV-009: a nameless place still reaches every app, just without a label', () => {
     const targets = getNavigationTargets(place({ name: '' }))
-    expect(targets.map(t => t.id)).toEqual(['google', 'waze', 'apple', 'osm', 'comaps'])
+    expect(targets.map(t => t.id)).toEqual(['google', 'amap', 'waze', 'apple', 'osm', 'comaps'])
     expect(targets.find(t => t.id === 'waze')!.url).toBe('https://waze.com/ul?ll=48.2038,16.3616&navigate=yes')
+  })
+
+  it('FE-PLANNER-NAV-010: Amap is offered for a pin and converts China coordinates to GCJ', () => {
+    const amap = getNavigationTargets(place({ name: '滕王阁', lat: 28.6888, lng: 115.8741 })).find(t => t.id === 'amap')!
+    expect(amap.label).toBe('Amap')
+    expect(amap.url).toContain('uri.amap.com/marker')
+    expect(amap.url).toContain('callnative=1')
+    expect(amap.url).not.toContain('115.8741')
   })
 })

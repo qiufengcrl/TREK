@@ -130,11 +130,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     "2FA'sı olmayan kullanıcıların uygulamayı kullanmadan önce Ayarlar'da kurulumu tamamlaması gerekir.",
   'admin.apiKeys': 'API Anahtarları',
-  'admin.apiKeysHint': 'İsteğe bağlı. Fotoğraflar ve hava durumu gibi genişletilmiş yer verilerini etkinleştirir.',
+  'admin.apiKeysHint': 'İsteğe bağlı. Amap anahtarı Çin’de yer arama, döşemeler, rotalar ve hava durumu için önce kullanılır. Google anahtarı fotoğraf, puan ve çalışma saatleri ekler.',
+  'admin.amapKey': 'Amap (Gaode) Web API Anahtarı',
+  'admin.amapKeyHintLong': 'Ayarlandığında yer arama, otomatik tamamlama, ayrıntılar ve ters geokodlama önce Amap’i dener. Boş veya hatalı sonuç OpenStreetMap’e düşer (Google atlanır). Web hizmeti anahtarı: console.amap.com. Google alanına yapıştırmayın.',
   'admin.mapsKey': 'Google Haritalar API Anahtarı',
   'admin.mapsKeyHint': 'Yer arama için gereklidir. console.cloud.google.com adresinden erişin',
-  'admin.mapsKeyHintLong':
-    'API anahtarı olmadan OpenStreetMap yer arama için kullanılır. Bir Google API anahtarıyla fotoğraflar, derecelendirmeler ve açılış saatleri de yüklenebilir. console.cloud.google.com adresinden bir tane edinin.',
+  'admin.mapsKeyHintLong': 'Amap anahtarı yokken kullanılır. Google veya Amap anahtarı yoksa OpenStreetMap arar. Google anahtarı fotoğraf, puan ve açılış saatlerini de yükleyebilir. console.cloud.google.com adresinden alın.',
   'admin.recommended': 'Tavsiye edilen',
   'admin.weatherKey': 'OpenWeatherMap API Anahtarı',
   'admin.weatherKeyHint': "Hava durumu verileri için. openweathermap.org'da ücretsiz",

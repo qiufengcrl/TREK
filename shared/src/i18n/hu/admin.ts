@@ -87,11 +87,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'A 2FA nélküli felhasználóknak a Beállításokban kell befejezniük a beállítást az alkalmazás használata előtt.',
   'admin.apiKeys': 'API kulcsok',
-  'admin.apiKeysHint': 'Opcionális. Bővített helyadatokat tesz lehetővé, például fotókat és időjárást.',
+  'admin.apiKeysHint': 'Opcionális. Az Amap-kulcsot használjuk először kínai helykereséshez, csempékhez, útvonalakhoz és időjáráshoz. A Google-kulcs fotókat, értékeléseket és nyitvatartást ad.',
+  'admin.amapKey': 'Amap (Gaode) webes API-kulcs',
+  'admin.amapKeyHintLong': 'Ha be van állítva, a helykeresés, az automatikus kiegészítés, a részletek és a fordított geokódolás először az Amapot próbálja. Üres vagy hibás válasz OpenStreetMapre esik (a Google kimarad). Webszolgáltatás-kulcs: console.amap.com. Ne tedd a Google mezőbe.',
   'admin.mapsKey': 'Google Maps API kulcs',
   'admin.mapsKeyHint': 'Helykereséshez szükséges. Létrehozás: console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'API kulcs nélkül az OpenStreetMap szolgál helykeresésre. Google API kulccsal képek, értékelések és nyitvatartás is betölthetők. Létrehozás: console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Akkor használjuk, ha nincs Amap-kulcs. Google- vagy Amap-kulcs nélkül az OpenStreetMap keres. A Google-kulcs képeket, értékeléseket és nyitvatartást is betölthet. Létrehozás: console.cloud.google.com.',
   'admin.recommended': 'Ajánlott',
   'admin.weatherKey': 'OpenWeatherMap API kulcs',
   'admin.weatherKeyHint': 'Időjárás adatokhoz. Ingyenes: openweathermap.org',

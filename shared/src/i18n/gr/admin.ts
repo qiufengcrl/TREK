@@ -133,11 +133,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Οι χρήστες χωρίς 2FA πρέπει να ολοκληρώσουν τη ρύθμιση στις Ρυθμίσεις πριν χρησιμοποιήσουν την εφαρμογή.',
   'admin.apiKeys': 'Κλειδιά API',
-  'admin.apiKeysHint': 'Προαιρετικά. Ενεργοποιεί εκτεταμένα δεδομένα τόπων όπως φωτογραφίες και καιρό.',
+  'admin.apiKeysHint': 'Προαιρετικά. Ένα κλειδί Amap χρησιμοποιείται πρώτο για αναζήτηση τόπων, πλακίδια, διαδρομές και καιρό στην Κίνα. Ένα κλειδί Google προσθέτει φωτογραφίες, βαθμολογίες και ώρες λειτουργίας.',
+  'admin.amapKey': 'Κλειδί Web API Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Όταν οριστεί, η αναζήτηση τόπων, η αυτόματη συμπλήρωση, οι λεπτομέρειες και η αντίστροφη γεωκωδικοποίηση δοκιμάζουν πρώτα το Amap. Κενό ή αποτυχία πέφτει στο OpenStreetMap (το Google παραλείπεται). Κλειδί υπηρεσίας ιστού: console.amap.com. Μην το βάλετε στο πεδίο Google.',
   'admin.mapsKey': 'Google Maps API Key',
   'admin.mapsKeyHint': 'Απαιτείται για αναζήτηση τόπων. Λάβετε το από console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Χωρίς κλειδί API, χρησιμοποιείται το OpenStreetMap για αναζήτηση τόπων. Με κλειδί Google API, μπορούν επίσης να φορτωθούν φωτογραφίες, βαθμολογίες και ώρες λειτουργίας. Λάβετε ένα στο console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Χρησιμοποιείται όταν δεν υπάρχει κλειδί Amap. Χωρίς κλειδί Google ή Amap, η αναζήτηση γίνεται με OpenStreetMap. Ένα κλειδί Google μπορεί επίσης να φορτώσει φωτογραφίες, βαθμολογίες και ώρες λειτουργίας. Λάβετε ένα στο console.cloud.google.com.',
   'admin.recommended': 'Συνιστάται',
   'admin.weatherKey': 'OpenWeatherMap API Key',
   'admin.weatherKeyHint': 'Για δεδομένα καιρού. Δωρεάν στο openweathermap.org',

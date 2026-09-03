@@ -23,7 +23,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Mapa',
   'settings.mapTemplate': 'Modelo de mapa',
   'settings.mapTemplatePlaceholder.select': 'Selecione o modelo...',
-  'settings.mapDefaultHint': 'Deixe vazio para OpenStreetMap (padrão)',
+  'settings.mapDefaultHint': "Deixe vazio para o mapa padrão do app (Amap quando houver chave Amap; senão OpenFreeMap)",
   'settings.mapHint': 'URL do modelo de blocos do mapa',
   'settings.mapProvider': 'Provedor de mapa',
   'settings.mapProviderHint': 'Afeta os mapas do Planejador de Viagem e Diário. Atlas sempre usa Leaflet.',
@@ -336,8 +336,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Último uso',
   'settings.passkey.neverUsed': 'Nunca usada',
   'settings.mapPoiPill': 'Explorar lugares no mapa',
-  'settings.mapPoiPillHint':
-    'Mostrar uma etiqueta de categoria no mapa da viagem para encontrar restaurantes, hotéis e mais por perto a partir do OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Mostrar uma etiqueta de categoria no mapa da viagem para encontrar restaurantes, hotéis e mais por perto. Usa Amap se houver chave; senão, OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Conecte seu AirTrail auto-hospedado para importar e sincronizar voos. Crie uma chave de API no AirTrail em Configurações → Segurança.',

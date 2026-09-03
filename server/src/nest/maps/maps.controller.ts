@@ -7,10 +7,11 @@ import {
   Param,
   Post,
   Query,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import type { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type {
@@ -19,6 +20,7 @@ import type {
   MapsPlacePhotoResult,
   MapsResolveUrlResult,
   MapsReverseResult,
+  MapsRouteResult,
   MapsSearchResult,
 } from '@trek/shared';
 import type { User } from '../../types';
@@ -27,12 +29,17 @@ import { StorageService } from '../storage/storage.service';
 import { isClientAbortError } from '../storage/storage.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { MapsSearchDto, MapsAutocompleteDto, MapsResolveUrlDto } from './maps.dto';
+import { RateLimitService } from '../common/rate-limit.service';
+import { MapsSearchDto, MapsAutocompleteDto, MapsResolveUrlDto, MapsRouteDto } from './maps.dto';
 
 /** Google's session-token shape: URL-safe ASCII, at most 36 characters. The
  *  autocomplete body is validated by the Zod pipe; the details query is not,
  *  so it is checked here rather than forwarded blindly. */
 const SESSION_TOKEN = /^[A-Za-z0-9_-]{1,36}$/;
+
+/** Per-user ceiling for Amap route proxy — each call can fan out to ≤29 upstream legs. */
+const ROUTE_RATE_MAX = 20;
+const ROUTE_RATE_WINDOW_MS = 60_000;
 
 /** Maps a thrown service error to the same status + { error } body Express sent. */
 function toHttpException(err: unknown, fallbackMessage: string, defaultStatus: number): HttpException {
@@ -66,6 +73,7 @@ export class MapsController {
   constructor(
     private readonly maps: MapsService,
     private readonly storage: StorageService,
+    private readonly rl: RateLimitService,
   ) {}
 
   @Post('search')
@@ -249,6 +257,31 @@ export class MapsController {
       const message = err instanceof Error ? err.message : 'Failed to resolve URL';
       console.error('[Maps] URL resolve error:', message);
       throw toHttpException(err, 'Failed to resolve URL', 400);
+    }
+  }
+
+  @Post('route')
+  @HttpCode(200)
+  async route(
+    @CurrentUser() user: User,
+    @Body() body: MapsRouteDto,
+    @Req() req: Request,
+  ): Promise<MapsRouteResult> {
+    // Keyed on the account: shared Amap quota must not be burned by one member
+    // hammering 30-waypoint fan-outs from behind a NAT.
+    if (!this.rl.check('maps_route', String(user.id), ROUTE_RATE_MAX, ROUTE_RATE_WINDOW_MS, Date.now())) {
+      throw new HttpException({ error: 'Too many route requests. Please try again later.' }, 429);
+    }
+    const ac = new AbortController();
+    const onClose = () => ac.abort();
+    req.on('close', onClose);
+    try {
+      return await this.maps.route(user.id, body.waypoints, body.profile, ac.signal);
+    } catch (err: unknown) {
+      console.error('Maps route error:', err);
+      throw toHttpException(err, 'Route error', 500);
+    } finally {
+      req.off('close', onClose);
     }
   }
 }

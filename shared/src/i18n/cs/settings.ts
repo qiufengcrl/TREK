@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Mapy',
   'settings.mapTemplate': 'Šablona mapy',
   'settings.mapTemplatePlaceholder.select': 'Vyberte šablonu...',
-  'settings.mapDefaultHint': 'Ponechte prázdné pro OpenStreetMap (výchozí)',
+  'settings.mapDefaultHint': "Ponechte prázdné pro výchozí mapu aplikace (Amap při nastaveném klíči Amap, jinak OpenFreeMap)",
   'settings.mapHint': 'URL šablony pro mapové dlaždice',
   'settings.mapProvider': 'Poskytovatel mapy',
   'settings.mapProviderHint': 'Ovlivňuje mapy v Trip Planneru a Journey. Atlas vždy používá Leaflet.',
@@ -330,8 +330,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Naposledy použito',
   'settings.passkey.neverUsed': 'Nikdy nepoužito',
   'settings.mapPoiPill': 'Objevovat místa na mapě',
-  'settings.mapPoiPillHint':
-    'Zobrazit na mapě výletu kategorie pro hledání restaurací, hotelů a dalšího v okolí z OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Zobrazit na mapě výletu kategorie pro hledání restaurací, hotelů a dalšího v okolí. Při nastaveném klíči použije Amap, jinak OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Připojte svou vlastní instanci AirTrail pro import a synchronizaci letů. Vytvořte API klíč v AirTrail v Nastavení → Zabezpečení.',

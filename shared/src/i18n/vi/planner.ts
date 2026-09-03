@@ -48,6 +48,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Tối ưu hóa',
   'planner.openGoogleMaps': 'Mở trong Google Maps',
   'planner.openCoMaps': 'Mở trong CoMaps',
+  'planner.openAmap': 'Mở trong Amap',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': 'Chọn một ngày từ danh sách bên trái để xem kế hoạch trong ngày',
   'planner.noPlacesForDay': 'Chưa có địa điểm nào cho ngày này',
   'planner.addPlacesLink': 'Thêm địa điểm →',

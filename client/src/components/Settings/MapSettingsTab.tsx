@@ -22,6 +22,7 @@ import {
   type GlMapProvider,
 } from '../Map/glProviders'
 import { useAuthStore } from '../../store/authStore'
+import { AMAP_VEC } from '../../constants/mapDefaults'
 
 interface MapPreset {
   name: string
@@ -29,10 +30,12 @@ interface MapPreset {
 }
 
 const MAP_PRESETS: MapPreset[] = [
+  // Recommended for China installs (GCJ tiles; MapView shifts WGS pins to match).
+  { name: 'Amap (Gaode)', url: AMAP_VEC },
   { name: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' },
   { name: 'OpenStreetMap DE', url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png' },
-  // The app default, and a vector style rather than a {z}/{x}/{y} template: no
-  // key, no registration, no request limits.
+  // The app default outside China, and a vector style rather than a {z}/{x}/{y}
+  // template: no key, no registration, no request limits.
   { name: 'OpenFreeMap Positron', url: 'https://tiles.openfreemap.org/styles/positron' },
   { name: 'OpenFreeMap Bright', url: 'https://tiles.openfreemap.org/styles/bright' },
   // CARTO watermarks keyless tiles since 26.08.2026 and issues keys by mail, so
@@ -335,6 +338,7 @@ export default function MapSettingsTab(): React.ReactElement {
 
       {/* Same deal as the Mapbox token: a managed install brings its own key. */}
       {provider === 'leaflet' && !managed && (
+        <>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('settings.mapCartoKey')}</label>
           <input
@@ -355,6 +359,7 @@ export default function MapSettingsTab(): React.ReactElement {
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{t('settings.mapCartoKeyMissing')}</p>
           )}
         </div>
+        </>
       )}
 
       {/* GL settings */}

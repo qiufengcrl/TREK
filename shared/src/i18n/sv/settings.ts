@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Karta',
   'settings.mapTemplate': 'Kartmall',
   'settings.mapTemplatePlaceholder.select': 'Välj mall...',
-  'settings.mapDefaultHint': 'Lämna fältet tomt för OpenStreetMap (standard)',
+  'settings.mapDefaultHint': "Lämna tomt för appens standardkarta (Amap om en Amap-nyckel finns, annars OpenFreeMap)",
   'settings.mapHint': 'URL-mall för kartrutor',
   'settings.mapProvider': 'Kartleverantör',
   'settings.mapProviderHint': 'Påverkar resplaneraren och resedagbokens kartor. Atlas använder alltid Leaflet.',
@@ -77,8 +77,7 @@ const settings: TranslationStrings = {
   'settings.aiAlwaysRetry': 'Försök alltid importera bokningar med AI',
   'settings.aiAlwaysRetryHint': 'När en fil inte kan läsas av standardtolken görs ett nytt försök automatiskt med AI.',
   'settings.mapPoiPill': 'Utforska platser på kartan',
-  'settings.mapPoiPillHint':
-    'Visa en kategoriknapp på resekartan för att hitta restauranger, hotell och annat i närheten från OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Visa en kategoriknapp på resekartan för att hitta restauranger, hotell och annat i närheten. Använder Amap om en nyckel är satt, annars OpenStreetMap.',
   'settings.blurBookingCodes': 'Blurra bokningskoder',
   'settings.optimizeFromAccommodation': 'Optimera rutten från boendet',
   'settings.optimizeFromAccommodationHint':

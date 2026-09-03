@@ -4,6 +4,8 @@
 
 No. When no Google Maps key is configured, TREK automatically falls back to OpenStreetMap (Nominatim) for place search — no API key or account required. If you want richer place data (photos, ratings, opening hours), an admin can optionally add a Google Maps key in **Admin Panel → Settings** — see [Admin Panel Overview](Admin-Panel-Overview). A key saved there applies instance-wide to every member; there is no per-user field for it in the UI.
 
+In mainland China, Nominatim and Google are often unreachable. Add an **Amap (高德) Web service** key in the same API Keys panel (or set `AMAP_API_KEY`) — TREK will search through Amap first.
+
 ## Can I use TREK offline?
 
 Yes. TREK is a Progressive Web App. After your first visit, the service worker (powered by Workbox) caches map tiles (Carto, OpenStreetMap, Mapbox GL and OpenFreeMap), uploaded covers and avatars, and every page of the app. Subsequent visits work without a network connection for already-cached content. Trip data does not come from that cache: it is stored per user in IndexedDB and read back through TREK's own offline layer, with writes queued and replayed once you reconnect. See [Offline Mode and PWA](Offline-Mode-and-PWA) for installation instructions.

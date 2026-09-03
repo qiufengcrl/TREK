@@ -48,6 +48,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Optimalizálás',
   'planner.openGoogleMaps': 'Megnyitás a Google Térképben',
   'planner.openCoMaps': 'Megnyitás a CoMaps-ben',
+  'planner.openAmap': 'Megnyitás az Amapben',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': 'Válassz egy napot a bal oldali listából a napi terv megtekintéséhez',
   'planner.noPlacesForDay': 'Még nincsenek helyek erre a napra',
   'planner.addPlacesLink': 'Helyek hozzáadása →',

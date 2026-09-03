@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Térkép',
   'settings.mapTemplate': 'Térkép sablon',
   'settings.mapTemplatePlaceholder.select': 'Sablon kiválasztása...',
-  'settings.mapDefaultHint': 'Hagyd üresen az OpenStreetMap használatához (alapértelmezett)',
+  'settings.mapDefaultHint': "Hagyd üresen az alkalmazás alapértelmezett térképéhez (Amap kulcs esetén Amap, egyébként OpenFreeMap)",
   'settings.mapHint': 'URL sablon a térképcsempékhez',
   'settings.mapProvider': 'Térkép szolgáltató',
   'settings.mapProviderHint': 'A Trip Planner és Journey térképekre érvényes. Az Atlas mindig Leafletet használ.',
@@ -338,8 +338,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Utoljára használva',
   'settings.passkey.neverUsed': 'Még nem használt',
   'settings.mapPoiPill': 'Helyek felfedezése a térképen',
-  'settings.mapPoiPillHint':
-    'Megjelenít egy kategóriasávot az utazási térképen, hogy az OpenStreetMap segítségével közeli éttermeket, szállásokat és továbbiakat találj.',
+  'settings.mapPoiPillHint': 'Megjelenít egy kategóriasávot az utazási térképen, hogy közeli éttermeket, szállásokat és továbbiakat találj. Kulcs esetén Amapot használ, különben OpenStreetMapet.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Csatlakoztasd a saját üzemeltetésű AirTrail-példányodat járatok importálásához és szinkronizálásához. Hozz létre egy API-kulcsot az AirTrailben a Beállítások → Biztonság menüpontban.',

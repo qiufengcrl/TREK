@@ -25,7 +25,7 @@ import { useAirtrailConnection } from '../../hooks/useAirtrailConnection'
 import { useIsTouch } from '../../hooks/useIsTouch'
 import { usePluginStore } from '../../store/pluginStore'
 import type { Accommodation, TripMember, Day, Place, Reservation } from '../../types'
-import { OFM_POSITRON, DEFAULT_MAP_LAT, DEFAULT_MAP_LNG, DEFAULT_MAP_ZOOM } from '../../constants/mapDefaults'
+import { OFM_POSITRON, AMAP_VEC, DEFAULT_MAP_LAT, DEFAULT_MAP_LNG, DEFAULT_MAP_ZOOM } from '../../constants/mapDefaults'
 import { useTileUrl } from '../../hooks/useTileUrl'
 import { resolvePoolAssignmentId } from './tripPlannerModel'
 import { isDeepLinkableTripTab, TRIP_TAB_LABEL_KEYS } from '../../constants/tripTabs'
@@ -1031,7 +1031,8 @@ export function useTripPlanner() {
     return da.map(a => a.place).filter(p => p?.lat && p?.lng)
   }, [selectedDayId, assignments])
 
-  const mapTileUrl = useTileUrl(OFM_POSITRON)
+  const hasAmapKey = useAuthStore(s => s.hasAmapKey)
+  const mapTileUrl = useTileUrl(hasAmapKey ? AMAP_VEC : OFM_POSITRON)
 
   const fontStyle = { fontFamily: "var(--font-system)" }
 

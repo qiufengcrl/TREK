@@ -36,6 +36,7 @@ describe('settings defaults', () => {
   it('SETTINGS-DEFAULTS-003: no CARTO key is shipped, so the field starts empty instead of undefined', () => {
     expect(DEFAULT_SETTINGS.carto_api_key).toBe('')
   })
+
 })
 
 // The CARTO key lives in its own setting and is appended at render time (#2054). Two things

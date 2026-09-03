@@ -25,7 +25,7 @@ function make(opts: { kit?: boolean; ai?: boolean; extract?: any; parse?: any })
   const reservations = { create: vi.fn() };
   // budget/addons/realtime/maps ride the confirm() path only — the preview()
   // tests never reach them, so stubs beyond the positional slots aren't needed.
-  const maps = { searchNominatim: vi.fn() };
+  const maps = { searchPlaces: vi.fn(), searchNominatim: vi.fn() };
   // Places became a constructor dep with the place DI fold (was a path mock of
   // services/placeService); only confirm() reaches it, so a bare create stub does.
   const places = { create: vi.fn() };
@@ -116,16 +116,19 @@ describe('BookingImportService.preview endpoint geocoding (#1969)', () => {
     },
   };
 
-  const hit = (lat: number, lng: number) => [{ lat, lng, display_name: 'x' }];
+  const hit = (lat: number, lng: number) => ({ places: [{ lat, lng, name: 'x' }], source: 'test' });
 
   it('gives a named station coordinates, so it survives the save', async () => {
     const { svc, maps } = make({ kit: true, extract: async () => [TRAIN_KI] });
-    maps.searchNominatim.mockResolvedValue(hit(52.525, 13.369));
+    maps.searchNominatim.mockResolvedValue([{ lat: 52.525, lng: 13.369, name: 'x' }]);
 
     const res = await svc.preview([file()], 'no-ai', 1);
     const endpoints = (res.items[0] as { endpoints?: { lat: number | null }[] }).endpoints ?? [];
     expect(endpoints.length).toBeGreaterThan(0);
     for (const ep of endpoints) expect(ep.lat).not.toBeNull();
+    // Latin station names stay on Nominatim so an Amap key cannot pin them in China.
+    expect(maps.searchNominatim).toHaveBeenCalledWith('Berlin Hbf', undefined, 'background');
+    expect(maps.searchPlaces).not.toHaveBeenCalled();
   });
 
   it('asks the same station only once, however often it appears', async () => {
@@ -134,11 +137,11 @@ describe('BookingImportService.preview endpoint geocoding (#1969)', () => {
       // Two legs out of and back into the same station.
       extract: async () => [TRAIN_KI, TRAIN_KI],
     });
-    maps.searchNominatim.mockResolvedValue(hit(52.525, 13.369));
+    maps.searchNominatim.mockResolvedValue([{ lat: 52.525, lng: 13.369, name: 'x' }]);
 
     await svc.preview([file()], 'no-ai', 1);
-    // Two distinct names across four endpoints — Nominatim allows about one
-    // request a second on this lane, so repeats have to come from the cache.
+    // Two distinct names across four endpoints — geocoding is rate-limited,
+    // so repeats have to come from the cache.
     expect(maps.searchNominatim).toHaveBeenCalledTimes(2);
   });
 
@@ -159,7 +162,7 @@ describe('BookingImportService.preview endpoint geocoding (#1969)', () => {
 
   it('survives a geocoder that throws, rather than failing the import', async () => {
     const { svc, maps } = make({ kit: true, extract: async () => [TRAIN_KI] });
-    maps.searchNominatim.mockRejectedValue(new Error('nominatim down'));
+    maps.searchNominatim.mockRejectedValue(new Error('geocoder down'));
 
     const res = await svc.preview([file()], 'no-ai', 1);
     expect(res.items).toHaveLength(1);
@@ -177,6 +180,26 @@ describe('BookingImportService.preview endpoint geocoding (#1969)', () => {
     const { svc, maps } = make({ kit: true, extract: async () => [withGeo] });
 
     await svc.preview([file()], 'no-ai', 1);
+    expect(maps.searchPlaces).not.toHaveBeenCalled();
+    expect(maps.searchNominatim).not.toHaveBeenCalled();
+  });
+
+  it('uses Amap-first searchPlaces when the station name is CJK', async () => {
+    const cjk = {
+      ...TRAIN_KI,
+      reservationFor: {
+        ...TRAIN_KI.reservationFor,
+        departureStation: { name: '北京西站' },
+        arrivalStation: { name: '上海虹桥' },
+      },
+    };
+    const { svc, maps } = make({ kit: true, extract: async () => [cjk] });
+    maps.searchPlaces.mockResolvedValue(hit(39.895, 116.321));
+
+    const res = await svc.preview([file()], 'no-ai', 1);
+    const endpoints = (res.items[0] as { endpoints?: { lat: number | null }[] }).endpoints ?? [];
+    for (const ep of endpoints) expect(ep.lat).not.toBeNull();
+    expect(maps.searchPlaces).toHaveBeenCalled();
     expect(maps.searchNominatim).not.toHaveBeenCalled();
   });
 });

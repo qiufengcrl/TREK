@@ -8,6 +8,7 @@ import { getTransitMapSegments, type TransitMapSegment } from './transitGeometry
 import { geodesicArcs } from './flightGeodesy'
 import { cleanEndpointName } from './reservationName'
 import { useSettingsStore } from '../../store/settingsStore'
+import { shiftLine, toDisplayLatLng } from '../../utils/mapCrs'
 import type { Reservation, ReservationEndpoint } from '../../types'
 
 const ENDPOINT_PANE = 'reservation-endpoints'
@@ -147,9 +148,11 @@ interface Props {
   // Real road-network geometry for car/bus/taxi/bicycle bookings, keyed by
   // reservation id. When present it is drawn instead of the straight arc.
   roadRoutes?: Map<number, [number, number][]>
+  /** Leaflet latlng must be GCJ when the visible tiles are Amap. */
+  gcjTiles?: boolean
 }
 
-export default function ReservationOverlay({ reservations, showConnections, onEndpointClick, roadRoutes }: Props) {
+export default function ReservationOverlay({ reservations, showConnections, onEndpointClick, roadRoutes, gcjTiles = false }: Props) {
   useEndpointPane()
   const map = useMap()
   const [zoom, setZoom] = useState(() => map.getZoom())
@@ -206,23 +209,27 @@ export default function ReservationOverlay({ reservations, showConnections, onEn
       // straight connectors) must not suppress it. Otherwise a zoomed-out day — e.g. one
       // with no other places to tighten the map onto — hides the whole route (#1570).
       if (item.transitSegs.length > 0) return true
-      const fromPx = map.latLngToContainerPoint([item.from.lat, item.from.lng])
-      const toPx = map.latLngToContainerPoint([item.to.lat, item.to.lng])
+      const from = toDisplayLatLng(item.from.lat, item.from.lng, gcjTiles)
+      const to = toDisplayLatLng(item.to.lat, item.to.lng, gcjTiles)
+      const fromPx = map.latLngToContainerPoint([from.lat, from.lng])
+      const toPx = map.latLngToContainerPoint([to.lat, to.lng])
       const minPx = item.type === 'flight' ? 50 : item.type === 'cruise' ? 150 : item.type === 'car' ? 80 : 200
       return fromPx.distanceTo(toPx) >= minPx
     })
-  }, [items, zoom, map])
+  }, [items, zoom, map, gcjTiles])
 
   const labelVisibleIds = useMemo(() => {
     const set = new Set<number>()
     for (const item of visibleItems) {
-      const fromPx = map.latLngToContainerPoint([item.from.lat, item.from.lng])
-      const toPx = map.latLngToContainerPoint([item.to.lat, item.to.lng])
+      const from = toDisplayLatLng(item.from.lat, item.from.lng, gcjTiles)
+      const to = toDisplayLatLng(item.to.lat, item.to.lng, gcjTiles)
+      const fromPx = map.latLngToContainerPoint([from.lat, from.lng])
+      const toPx = map.latLngToContainerPoint([to.lat, to.lng])
       const minPx = item.type === 'flight' ? 50 : item.type === 'cruise' ? 300 : item.type === 'car' ? 150 : item.type === 'transit' ? 900 : 400
       if (fromPx.distanceTo(toPx) >= minPx) set.add(item.res.id)
     }
     return set
-  }, [visibleItems, zoom, map])
+  }, [visibleItems, zoom, map, gcjTiles])
 
   if (!showConnections) return null
 
@@ -234,12 +241,12 @@ export default function ReservationOverlay({ reservations, showConnections, onEn
             <Fragment key={`transit-${item.res.id}-${segIdx}`}>
               {!seg.walk && (
                 <Polyline
-                  positions={seg.coords}
+                  positions={shiftLine(seg.coords, gcjTiles)}
                   pathOptions={{ color: '#ffffff', weight: 6, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }}
                 />
               )}
               <Polyline
-                positions={seg.coords}
+                positions={shiftLine(seg.coords, gcjTiles)}
                 pathOptions={seg.walk
                   ? { color: '#64748b', weight: 3, opacity: 0.8, dashArray: '1, 7', lineCap: 'round' }
                   : { color: seg.color || TYPE_META.transit.color, weight: 3.5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }}
@@ -253,7 +260,7 @@ export default function ReservationOverlay({ reservations, showConnections, onEn
         return lines.map((seg, segIdx) => (
           <Polyline
             key={`line-${item.res.id}-${segIdx}`}
-            positions={seg}
+            positions={shiftLine(seg, gcjTiles)}
             pathOptions={{
               color: TYPE_META[item.type].color,
               weight: 2.5,
@@ -264,10 +271,12 @@ export default function ReservationOverlay({ reservations, showConnections, onEn
         ))
       })}
 
-      {visibleItems.flatMap(item => item.waypoints.map((wp, wi) => (
+      {visibleItems.flatMap(item => item.waypoints.map((wp, wi) => {
+        const pos = toDisplayLatLng(wp.lat, wp.lng, gcjTiles)
+        return (
         <Marker
           key={`wp-${item.res.id}-${wi}`}
-          position={[wp.lat, wp.lng]}
+          position={[pos.lat, pos.lng]}
           icon={endpointIcon(item.type, showEndpointLabels && labelVisibleIds.has(item.res.id) ? (wp.code || cleanEndpointName(wp.name)) : null)}
           pane={ENDPOINT_PANE}
           zIndexOffset={1000}
@@ -278,7 +287,8 @@ export default function ReservationOverlay({ reservations, showConnections, onEn
             {item.res.title && <div className="text-content-muted" style={{ fontSize: 11 }}>{item.res.title}</div>}
           </Tooltip>
         </Marker>
-      )))}
+        )
+      }))}
     </>
   )
 }

@@ -83,6 +83,7 @@ export const placeSchema = z.object({
   trip_id: z.number(),
   name: z.string(),
   description: z.string().nullable().optional(),
+  /** WGS-84. Amap search/route convert at the provider boundary. */
   lat: z.number().nullable().optional(),
   lng: z.number().nullable().optional(),
   address: z.string().nullable().optional(),

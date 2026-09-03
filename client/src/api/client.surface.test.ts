@@ -418,6 +418,7 @@ describe('client > endpoint wiring', () => {
       { n: 'maps.placePhoto', r: () => mapsApi.placePhoto('place/1'), e: 'GET /api/maps/place-photo/place%2F1' },
       { n: 'maps.reverse', r: () => mapsApi.reverse(41.9, 12.5), e: 'GET /api/maps/reverse' },
       { n: 'maps.resolveUrl', r: () => mapsApi.resolveUrl('https://maps.app.goo.gl/x'), e: 'POST /api/maps/resolve-url' },
+      { n: 'maps.route', r: () => mapsApi.route({ waypoints: [{ lat: 1, lng: 2 }, { lat: 3, lng: 4 }], profile: 'driving' }), e: 'POST /api/maps/route' },
       { n: 'maps.pois', r: () => mapsApi.pois('cafe', { south: 1, west: 2, north: 3, east: 4 }), e: 'GET /api/maps/pois' },
       { n: 'airports.search', r: () => airportsApi.search('BER'), e: 'GET /api/airports/search' },
       { n: 'airports.byIata', r: () => airportsApi.byIata('b/er'), e: 'GET /api/airports/b%2Fer' },

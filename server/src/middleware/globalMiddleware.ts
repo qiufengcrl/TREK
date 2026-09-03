@@ -202,7 +202,15 @@ export function applyGlobalMiddleware(
           "https://geocoding-api.open-meteo.com", "https://api.frankfurter.dev",
           "https://router.project-osrm.org/route/v1/", "https://routing.openstreetmap.de/",
           "https://api.mapbox.com", "https://*.tiles.mapbox.com", "https://events.mapbox.com",
-          "https://tiles.openfreemap.org"
+          "https://tiles.openfreemap.org",
+          // Amap (Gaode) raster CDNs — street + satellite (+ label) tiles.
+          "https://*.is.autonavi.com", "https://webrd01.is.autonavi.com", "https://webrd02.is.autonavi.com",
+          "https://webrd03.is.autonavi.com", "https://webrd04.is.autonavi.com",
+          "https://webst01.is.autonavi.com", "https://webst02.is.autonavi.com",
+          "https://webst03.is.autonavi.com", "https://webst04.is.autonavi.com",
+          "https://wprd01.is.autonavi.com", "https://wprd02.is.autonavi.com",
+          "https://wprd03.is.autonavi.com", "https://wprd04.is.autonavi.com",
+          "https://restapi.amap.com", "https://uri.amap.com"
         ],
         workerSrc: ["'self'", "blob:"],
         childSrc: ["'self'", "blob:"],

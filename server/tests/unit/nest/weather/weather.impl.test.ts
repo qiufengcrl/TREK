@@ -15,6 +15,7 @@ import {
   getWeather,
   getDetailedWeather,
   ApiError,
+  setWeatherAmapKeyResolver,
   type WeatherResult,
 } from '../../../../src/nest/weather/weather.impl';
 
@@ -920,5 +921,85 @@ describe('size cap on the Open-Meteo body', () => {
 
     const result = await getWeather('44.40', '9.43', date, 'en');
     expect(result.temp).toBe(15);
+  });
+});
+
+// ── Amap key resolver (Admin / instance key, not only env) ───────────────────
+
+describe('setWeatherAmapKeyResolver', () => {
+  beforeEach(() => {
+    vi.mocked(fetch).mockReset();
+    setWeatherAmapKeyResolver(() => null);
+  });
+
+  afterAll(() => {
+    setWeatherAmapKeyResolver(() => null);
+  });
+
+  it('WEATHER-AMAP-001: uses the injected resolver so Admin-set keys reach Amap weather', async () => {
+    setWeatherAmapKeyResolver(() => 'admin-amap-key');
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: '1',
+          regeocode: { addressComponent: { adcode: '110101', city: '北京市' } },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: '1',
+          lives: [{ city: '北京', weather: '晴', temperature: '22' }],
+          forecasts: [],
+        }),
+      } as Response);
+
+    const result = await getWeather('39.9', '116.4', undefined, 'en');
+    expect(result.temp).toBe(22);
+    expect(result.main).toBe('Clear');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('key=admin-amap-key');
+  });
+
+  it('WEATHER-AMAP-002: detailed China forecast uses Amap and skips Open-Meteo', async () => {
+    setWeatherAmapKeyResolver(() => 'admin-amap-key');
+    const date = dateOffset(3);
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: '1',
+          regeocode: { addressComponent: { adcode: '110101', city: '北京市' } },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: '1',
+          lives: [{ city: '北京', weather: '晴', temperature: '22' }],
+          forecasts: [{
+            casts: [{
+              date,
+              dayweather: '晴',
+              nightweather: '多云',
+              daytemp: '26',
+              nighttemp: '14',
+            }],
+          }],
+        }),
+      } as Response);
+
+    const result = await getDetailedWeather('39.88', '116.42', date, 'en');
+    expect(result.temp).toBe(20);
+    expect(result.temp_max).toBe(26);
+    expect(result.temp_min).toBe(14);
+    expect(result.hourly).toEqual([]);
+    expect(result.main).toBe('Clear');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('restapi.amap.com');
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('open-meteo'))).toBe(false);
   });
 });

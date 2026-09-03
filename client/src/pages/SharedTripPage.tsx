@@ -30,7 +30,7 @@ import { isDayInAccommodationRange } from '../utils/dayOrder';
 import { getFlightLegs, getTrainLegs } from '../utils/flightLegs';
 import { splitReservationDateTime } from '../utils/formatters';
 import { computeMapViewport, TILE_SIZE_RASTER } from '../utils/mapViewport';
-import { resolveBasemap } from '../utils/tileUrl';
+import { rasterTileLayerOptions, resolveBasemap } from '../utils/tileUrl';
 import { useSharedTrip } from './sharedTrip/useSharedTrip';
 
 const TRANSPORT_ICONS = { flight: Plane, train: Train, bus: Bus, car: Car, cruise: Ship };
@@ -500,7 +500,7 @@ export default function SharedTripPage() {
                   <TileLayer
                     url={basemap.url}
                     attribution={attributionForTile(basemap.url)}
-                    referrerPolicy="strict-origin-when-cross-origin"
+                    {...rasterTileLayerOptions(basemap.url)}
                   />
                 )}
                 <FitBoundsToPlaces places={mapPlaces} framedOnMount={framed !== null} />

@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Карта',
   'settings.mapTemplate': 'Шаблон карты',
   'settings.mapTemplatePlaceholder.select': 'Выберите шаблон...',
-  'settings.mapDefaultHint': 'Оставьте пустым для OpenStreetMap (по умолчанию)',
+  'settings.mapDefaultHint': "Оставьте пустым для карты по умолчанию (Amap при наличии ключа Amap, иначе OpenFreeMap)",
   'settings.mapHint': 'URL-шаблон для тайлов карты',
   'settings.mapProvider': 'Провайдер карты',
   'settings.mapProviderHint': 'Применяется к Trip Planner и Journey. Atlas всегда использует Leaflet.',
@@ -336,8 +336,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Последнее использование',
   'settings.passkey.neverUsed': 'Не использовался',
   'settings.mapPoiPill': 'Поиск мест на карте',
-  'settings.mapPoiPillHint':
-    'Показывать на карте поездки кнопку категорий, чтобы находить рядом рестораны, отели и другие места из OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Показывать на карте поездки кнопку категорий, чтобы находить рядом рестораны, отели и другие места. При наличии ключа используется Amap, иначе OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Подключите свой self-hosted AirTrail для импорта и синхронизации рейсов. Создайте ключ API в AirTrail в разделе «Настройки → Безопасность».',

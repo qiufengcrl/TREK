@@ -88,11 +88,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Los usuarios sin 2FA deben completar la configuración en Ajustes antes de usar la aplicación.',
   'admin.apiKeys': 'Claves API',
-  'admin.apiKeysHint': 'Opcional. Activa datos ampliados de lugares, como fotos y previsión del tiempo.',
+  'admin.apiKeysHint': 'Opcional. Una clave Amap se usa primero para búsqueda, teselas, rutas y tiempo en China. Una clave de Google añade fotos, valoraciones y horarios.',
+  'admin.amapKey': 'Clave API web de Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Si está definida, la búsqueda, el autocompletado, los detalles y la geocodificación inversa prueban Amap primero. Un resultado vacío o un error pasa a OpenStreetMap (se omite Google). Clave de servicio web en console.amap.com. No la pongas en el campo de Google.',
   'admin.mapsKey': 'Clave API de Google Maps',
   'admin.mapsKeyHint': 'Obligatoria para buscar lugares. Consíguela en console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Sin una clave API, la búsqueda de lugares usa OpenStreetMap. Con una clave de Google también se pueden cargar fotos, valoraciones y horarios de apertura. Consíguela en console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Se usa cuando no hay clave Amap. Sin clave de Google o Amap, la búsqueda usa OpenStreetMap. Una clave de Google también puede cargar fotos, valoraciones y horarios. Consíguela en console.cloud.google.com.',
   'admin.recommended': 'Recomendado',
   'admin.weatherKey': 'Clave API de OpenWeatherMap',
   'admin.weatherKeyHint': 'Para datos meteorológicos. Gratis en openweathermap.org',

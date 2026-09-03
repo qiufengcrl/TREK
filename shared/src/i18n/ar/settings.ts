@@ -21,7 +21,7 @@ const settings: TranslationStrings = {
   'settings.map': 'الخريطة',
   'settings.mapTemplate': 'قالب الخريطة',
   'settings.mapTemplatePlaceholder.select': 'اختر قالبًا...',
-  'settings.mapDefaultHint': 'اتركه فارغًا لاستخدام OpenStreetMap افتراضيًا',
+  'settings.mapDefaultHint': "اتركه فارغًا لاستخدام خريطة التطبيق الافتراضية (Amap عند تعيين مفتاح Amap، وإلا OpenFreeMap)",
   'settings.mapHint': 'قالب URL لبلاطات الخريطة',
   'settings.mapProvider': 'مزود الخريطة',
   'settings.mapProviderHint': 'يؤثر على خرائط Trip Planner و Journey. يستخدم Atlas دائمًا Leaflet.',
@@ -323,8 +323,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'آخر استخدام',
   'settings.passkey.neverUsed': 'لم يُستخدم قط',
   'settings.mapPoiPill': 'استكشاف الأماكن على الخريطة',
-  'settings.mapPoiPillHint':
-    'أظهر شريط فئات على خريطة الرحلة للعثور على المطاعم والفنادق والمزيد القريبة من OpenStreetMap.',
+  'settings.mapPoiPillHint': 'أظهر شريط فئات على خريطة الرحلة للعثور على المطاعم والفنادق والمزيد القريبة. يستخدم Amap عند وجود مفتاح، وإلا OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'اربط نسخة AirTrail المُستضافة ذاتيًا لاستيراد الرحلات ومزامنتها. أنشئ مفتاح API في AirTrail ضمن الإعدادات ← الأمان.',

@@ -29,10 +29,11 @@ import {
   clearTripData,
   enforceBlobBudget,
 } from '../db/offlineDb'
-import { prefetchTilesForTrip } from './tilePrefetcher'
+import { prefetchFallback, prefetchTilesForTrip } from './tilePrefetcher'
 import { isAuthed } from './authGate'
 import { getOfflinePrefs, isTripOfflineEnabled } from './offlinePrefs'
 import { useSettingsStore } from '../store/settingsStore'
+import { useAuthStore } from '../store/authStore'
 import type { Trip, Day, Place, PackingItem, TodoItem, BudgetItem, Reservation, TripFile, Accommodation, TripMember } from '../types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -219,6 +220,7 @@ export const tripSyncManager = {
       const cacheTiles = getOfflinePrefs().cacheTiles
       const tileUrl = useSettingsStore.getState().settings.map_tile_url || undefined
       const cartoKey = useSettingsStore.getState().settings.carto_api_key || undefined
+      const tileFallback = prefetchFallback(useAuthStore.getState().hasAmapKey)
       for (const trip of toSync) {
         if (!isAuthed()) return
         const files = await offlineDb.tripFiles.where('trip_id').equals(trip.id).toArray()
@@ -234,7 +236,7 @@ export const tripSyncManager = {
           for (const trip of toSync) {
             if (!isAuthed() || !navigator.onLine) return
             const places = await offlineDb.places.where('trip_id').equals(trip.id).toArray()
-            await prefetchTilesForTrip(trip.id, places, tileUrl, undefined, cartoKey).catch(console.error)
+            await prefetchTilesForTrip(trip.id, places, tileUrl, undefined, cartoKey, tileFallback).catch(console.error)
           }
         })
       }
@@ -291,12 +293,13 @@ export const tripSyncManager = {
       if (getOfflinePrefs().cacheTiles) {
         const tileUrl = useSettingsStore.getState().settings.map_tile_url || undefined
         const cartoKey = useSettingsStore.getState().settings.carto_api_key || undefined
+        const tileFallback = prefetchFallback(useAuthStore.getState().hasAmapKey)
         i = 0
         for (const trip of toSync) {
           if (!isAuthed()) return 0
           onProgress?.({ phase: 'tiles', current: ++i, total, label: trip.title })
           const places = await offlineDb.places.where('trip_id').equals(trip.id).toArray()
-          await prefetchTilesForTrip(trip.id, places, tileUrl, true, cartoKey).catch(console.error)
+          await prefetchTilesForTrip(trip.id, places, tileUrl, true, cartoKey, tileFallback).catch(console.error)
         }
       }
 

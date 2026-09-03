@@ -37,7 +37,7 @@ export default function MAdminSettingsSection({ admin, t }: MAdminSettingsSectio
     passkeyLogin, setPasskeyLogin, passkeyConfigured,
     webauthnRpId, setWebauthnRpId, webauthnOrigins, setWebauthnOrigins, savingWebauthn, handleSaveWebauthn,
     allowedFileTypes, setAllowedFileTypes, savingFileTypes, setSavingFileTypes,
-    mapsKey, setMapsKey, unsplashKey, setUnsplashKey, savingKeys, validating, validation,
+    mapsKey, setMapsKey, unsplashKey, setUnsplashKey, amapKey, setAmapKey, savingKeys, validating, validation,
     setShowRotateJwtModal,
     handleToggleAuthSetting, handleToggleRequireMfa,
     handleSaveApiKeys, handleValidateKey,
@@ -214,6 +214,47 @@ export default function MAdminSettingsSection({ admin, t }: MAdminSettingsSectio
       <MAdminCard>
         <MAdminCardHead title={t('admin.apiKeys')} hint={t('admin.apiKeysHint')} />
         <div className="space-y-3">
+          <MAdminField
+            label={
+              <span className="flex items-center gap-2">
+                {t('admin.amapKey')}
+                <span className="rounded-full bg-[color:color-mix(in_srgb,var(--m-st-confirmed)_14%,transparent)] px-[7px] py-[2px] font-geist text-[0.5625rem] font-bold text-[color:var(--m-st-confirmed)]">
+                  {t('admin.recommended')}
+                </span>
+              </span>
+            }
+            hint={t('admin.amapKeyHintLong')}
+          >
+            <div className="flex gap-2">
+              <div className="min-w-0 flex-1">
+                <MAdminSecretInput
+                  value={amapKey}
+                  onChange={(e) => setAmapKey(e.target.value)}
+                  placeholder={t('settings.keyPlaceholder')}
+                />
+              </div>
+              <MAdminButton
+                variant="ghost"
+                disabled={!amapKey}
+                busy={!!validating.amap}
+                onClick={() => handleValidateKey('amap')}
+                className="h-[42px]"
+              >
+                {t('admin.validateKey')}
+              </MAdminButton>
+            </div>
+            {validation.amap === true && (
+              <p className="mt-1 font-geist text-[0.625rem] font-bold text-[color:var(--m-st-confirmed)]">
+                {t('admin.keyValid')}
+              </p>
+            )}
+            {validation.amap === false && (
+              <p className="mt-1 font-geist text-[0.625rem] font-bold text-[color:var(--m-st-danger)]">
+                {t('admin.keyInvalid')}
+              </p>
+            )}
+          </MAdminField>
+
           <MAdminField
             label={
               <span className="flex items-center gap-2">

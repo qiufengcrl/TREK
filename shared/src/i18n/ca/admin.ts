@@ -93,11 +93,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     "Els usuaris sense 2FA han de completar la configuració a Ajustos abans d'utilitzar l'aplicació.",
   'admin.apiKeys': 'Claus API',
-  'admin.apiKeysHint': 'Opcional. Activa dades ampliades de llocs, com ara fotos i previsió meteorològica.',
+  'admin.apiKeysHint': 'Opcional. Una clau Amap s’usa primer per a la cerca, les tesel·les, les rutes i el temps a la Xina. Una clau de Google afegeix fotos, valoracions i horaris.',
+  'admin.amapKey': 'Clau API web d’Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Si està definida, la cerca, l’autocompletat, els detalls i la geocodificació inversa proven Amap primer. Un resultat buit o un error passa a OpenStreetMap (es salta Google). Clau de servei web a console.amap.com. No la posis al camp de Google.',
   'admin.mapsKey': 'Clau API de Google Maps',
   'admin.mapsKeyHint': 'Obligatòria per cercar llocs. Aconsegueix-la a console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    "Sense una clau API, la cerca de llocs fa servir OpenStreetMap. Amb una clau de Google també es poden carregar fotos, valoracions i horaris d'obertura. Aconsegueix-la a console.cloud.google.com.",
+  'admin.mapsKeyHintLong': 'S’usa quan no hi ha clau Amap. Sense clau de Google o Amap, la cerca fa servir OpenStreetMap. Una clau de Google també pot carregar fotos, valoracions i horaris. Aconsegueix-la a console.cloud.google.com.',
   'admin.recommended': 'Recomanat',
   'admin.weatherKey': "Clau API d'OpenWeatherMap",
   'admin.weatherKeyHint': 'Per a dades meteorològiques. Gratuït a openweathermap.org',

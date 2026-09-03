@@ -72,7 +72,7 @@ vi.spyOn(MapsService.prototype, 'searchOverpassPois').mockResolvedValue({
 // Off by default, so the existing cases exercise the lookup rather than the gate.
 vi.spyOn(MapsService.prototype, 'detailsDisabled').mockReturnValue(false);
 vi.spyOn(MapsService.prototype, 'reverseGeocode').mockResolvedValue({ name: 'Paris', address: 'France' });
-vi.spyOn(MapsService.prototype, 'resolveGoogleMapsUrl').mockResolvedValue({
+vi.spyOn(MapsService.prototype, 'resolveUrl').mockResolvedValue({
   lat: 48.8566,
   lng: 2.3522,
   name: 'Paris',

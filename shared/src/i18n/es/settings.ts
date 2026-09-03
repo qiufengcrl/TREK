@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Mapa',
   'settings.mapTemplate': 'Plantilla del mapa',
   'settings.mapTemplatePlaceholder.select': 'Seleccionar plantilla...',
-  'settings.mapDefaultHint': 'Déjalo vacío para OpenStreetMap (por defecto)',
+  'settings.mapDefaultHint': "Déjalo vacío para el mapa predeterminado de la app (Amap si hay clave de Amap; si no, OpenFreeMap)",
   'settings.mapHint': 'Plantilla de URL para los mosaicos del mapa',
   'settings.mapProvider': 'Proveedor de mapa',
   'settings.mapProviderHint': 'Afecta a los mapas de Trip Planner y Journey. Atlas siempre usa Leaflet.',
@@ -338,8 +338,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Último uso',
   'settings.passkey.neverUsed': 'Nunca usada',
   'settings.mapPoiPill': 'Explorar lugares en el mapa',
-  'settings.mapPoiPillHint':
-    'Muestra una píldora de categorías en el mapa del viaje para encontrar restaurantes, alojamientos y más cerca, desde OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Muestra una píldora de categorías en el mapa del viaje para encontrar restaurantes, alojamientos y más cerca. Usa Amap si hay una clave; si no, OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Conecta tu AirTrail autoalojado para importar y sincronizar vuelos. Crea una clave de API en AirTrail en Ajustes → Seguridad.',

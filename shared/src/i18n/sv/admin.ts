@@ -130,11 +130,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Användare som inte har tvåfaktorsautentisering måste slutföra inställningarna under inställningar innan de använder appen.',
   'admin.apiKeys': 'API Nycklar',
-  'admin.apiKeysHint': 'Valfritt. Aktiverar utökade platsuppgifter, såsom foton och väderinformation.',
+  'admin.apiKeysHint': 'Valfritt. En Amap-nyckel används först för platssökning, rutor, rutter och väder i Kina. En Google-nyckel lägger till foton, betyg och öppettider.',
+  'admin.amapKey': 'Amap (Gaode) webb-API-nyckel',
+  'admin.amapKeyHintLong': 'När den är satt försöker platssökning, autokomplettering, detaljer och omvänd geokodning Amap först. Tomt eller misslyckat resultat faller till OpenStreetMap (Google hoppas över). Webbtjänstnyckel på console.amap.com. Klistra inte in den i Google-fältet.',
   'admin.mapsKey': 'Google Maps API Nyckel',
   'admin.mapsKeyHint': 'Krävs för att söka efter platser. Hämta på console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Utan en API-nyckel används OpenStreetMap för platssökning. Med en Google API-nyckel kan även foton, betyg och öppettider hämtas. Skaffa en på console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Används när ingen Amap-nyckel är satt. Utan Google- eller Amap-nyckel söker OpenStreetMap. En Google-nyckel kan också hämta foton, betyg och öppettider. Skaffa en på console.cloud.google.com.',
   'admin.recommended': 'Rekommenderat',
   'admin.weatherKey': 'OpenWeatherMap API Nyckel',
   'admin.weatherKeyHint': 'För väderdata. Gratis på openweathermap.org',

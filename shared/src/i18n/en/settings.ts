@@ -31,7 +31,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Map',
   'settings.mapTemplate': 'Map Template',
   'settings.mapTemplatePlaceholder.select': 'Select template...',
-  'settings.mapDefaultHint': 'Leave empty for OpenStreetMap (default)',
+  'settings.mapDefaultHint': "Leave empty for the app default (Amap when an Amap key is set, otherwise OpenFreeMap)",
   'settings.mapHint': 'URL template for map tiles',
   'settings.mapProvider': 'Map Provider',
   'settings.mapProviderHint': 'Affects Trip Planner and Journey maps. Atlas always uses Leaflet.',
@@ -81,8 +81,7 @@ const settings: TranslationStrings = {
   'settings.bookingLabels': 'Booking route labels',
   'settings.bookingLabelsHint': 'Show station / airport names on the map. When off, only the icon is shown.',
   'settings.mapPoiPill': 'Explore places on the map',
-  'settings.mapPoiPillHint':
-    'Show a category pill on the trip map to find nearby restaurants, hotels and more from OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Show a category pill on the trip map to find nearby restaurants, hotels and more. Uses Amap when a key is set, otherwise OpenStreetMap.',
   'settings.blurBookingCodes': 'Blur Booking Codes',
   'settings.aiAlwaysRetry': 'Always retry booking imports with AI',
   'settings.aiAlwaysRetryHint': 'When a file cannot be read by the standard parser, automatically retry it with AI.',

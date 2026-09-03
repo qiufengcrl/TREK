@@ -18,6 +18,7 @@ const mobileTrip: TranslationStrings = {
   'mobileTrip.filesPrev': 'Tập tin trước',
   'mobileTrip.googleMaps': 'Google Maps',
   'mobileTrip.coMaps': 'CoMaps',
+  'mobileTrip.amap': 'Amap',
   'mobileTrip.icsDownload': 'Tải xuống .ics',
   'mobileTrip.icsSubscribe': 'Đăng ký lịch',
   'mobileTrip.icsSubscribeSub': 'Tự động cập nhật trong ứng dụng lịch của bạn',

@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Peta',
   'settings.mapTemplate': 'Template Peta',
   'settings.mapTemplatePlaceholder.select': 'Pilih template...',
-  'settings.mapDefaultHint': 'Kosongkan untuk OpenStreetMap (default)',
+  'settings.mapDefaultHint': "Kosongkan untuk peta default aplikasi (Amap jika ada kunci Amap; jika tidak, OpenFreeMap)",
   'settings.mapHint': 'Template URL untuk tile peta',
   'settings.mapProvider': 'Penyedia peta',
   'settings.mapProviderHint': 'Berlaku untuk peta Trip Planner dan Journey. Atlas selalu menggunakan Leaflet.',
@@ -334,8 +334,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Terakhir digunakan',
   'settings.passkey.neverUsed': 'Belum pernah digunakan',
   'settings.mapPoiPill': 'Jelajahi tempat di peta',
-  'settings.mapPoiPillHint':
-    'Tampilkan pil kategori di peta perjalanan untuk menemukan restoran, hotel, dan lainnya di sekitar dari OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Tampilkan pil kategori di peta perjalanan untuk menemukan restoran, hotel, dan lainnya di sekitar. Memakai Amap jika ada kunci; jika tidak, OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Hubungkan AirTrail yang kamu host sendiri untuk mengimpor dan menyinkronkan penerbangan. Buat kunci API di AirTrail pada Pengaturan → Keamanan.',

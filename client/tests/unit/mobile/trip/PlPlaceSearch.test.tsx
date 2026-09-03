@@ -4,6 +4,8 @@ import PlPlaceSearch from '../../../../src/mobile/screens/trip/sheets/PlPlaceSea
 import type { TripPlanner } from '../../../../src/mobile/screens/trip/MTripShell'
 import { buildPlanner } from '../../../helpers/mobileTrip'
 import { server } from '../../../helpers/msw/server'
+import { useAuthStore } from '../../../../src/store/authStore'
+import { resetAllStores, seedStore } from '../../../helpers/store'
 import { fireEvent, render, screen, waitFor } from '../../../helpers/render'
 
 // FE-MOB-PLSRCH-001 to FE-MOB-PLSRCH-018
@@ -368,5 +370,19 @@ describe('PlPlaceSearch', () => {
     expect(await screen.findByText('Louvre')).toBeInTheDocument()
     fireEvent.blur(input)
     await waitFor(() => expect(screen.queryByText('Louvre')).not.toBeInTheDocument())
+  })
+
+  it('FE-MOB-PLSRCH-019: no keys shows the OSM notice', () => {
+    resetAllStores()
+    setup()
+    expect(screen.getByText('places.osmActive')).toBeInTheDocument()
+  })
+
+  it('FE-MOB-PLSRCH-020: an Amap key shows the Amap notice', () => {
+    resetAllStores()
+    seedStore(useAuthStore, { hasAmapKey: true, hasMapsKey: false })
+    setup()
+    expect(screen.getByText('places.amapActive')).toBeInTheDocument()
+    expect(screen.queryByText('places.osmActive')).not.toBeInTheDocument()
   })
 })

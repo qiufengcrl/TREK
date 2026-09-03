@@ -135,6 +135,8 @@ export function deriveMaps(raw: RawEnv) {
   return {
     placesApiBase: raw.PLACES_API_BASE || undefined,
     placesApiKey: raw.PLACES_API_KEY || undefined,
+    /** 高德 Web 服务 Key，国内地点搜索优先于 Google / Nominatim。 */
+    amapApiKey: raw.AMAP_API_KEY || undefined,
     /** Public pk.* token shipped with a managed instance; reaches the browser by design. */
     mapboxToken: raw.MAPBOX_ACCESS_TOKEN || undefined,
     /** CARTO basemap key; without one the tiles come back watermarked (#2054). Public too. */

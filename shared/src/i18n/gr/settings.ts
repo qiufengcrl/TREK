@@ -23,7 +23,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Χάρτης',
   'settings.mapTemplate': 'Πρότυπο Χάρτη',
   'settings.mapTemplatePlaceholder.select': 'Επιλέξτε πρότυπο...',
-  'settings.mapDefaultHint': 'Αφήστε κενό για OpenStreetMap (προεπιλογή)',
+  'settings.mapDefaultHint': "Αφήστε κενό για τον προεπιλεγμένο χάρτη της εφαρμογής (Amap αν υπάρχει κλειδί Amap, αλλιώς OpenFreeMap)",
   'settings.mapHint': 'Πρότυπο URL για πλακίδια χάρτη',
   'settings.mapProvider': 'Πάροχος Χάρτη',
   'settings.mapProviderHint':
@@ -347,8 +347,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Τελευταία χρήση',
   'settings.passkey.neverUsed': 'Δεν χρησιμοποιήθηκε ποτέ',
   'settings.mapPoiPill': 'Εξερεύνηση μερών στον χάρτη',
-  'settings.mapPoiPillHint':
-    'Εμφάνιση ετικέτας κατηγορίας στον χάρτη του ταξιδιού για εύρεση κοντινών εστιατορίων, ξενοδοχείων και άλλων από το OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Εμφάνιση ετικέτας κατηγορίας στον χάρτη του ταξιδιού για εύρεση κοντινών εστιατορίων, ξενοδοχείων και άλλων. Χρησιμοποιεί Amap αν υπάρχει κλειδί, αλλιώς OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Συνδέστε το αυτο-φιλοξενούμενο AirTrail σας για εισαγωγή και συγχρονισμό πτήσεων. Δημιουργήστε ένα κλειδί API στο AirTrail από Ρυθμίσεις → Ασφάλεια.',

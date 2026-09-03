@@ -48,6 +48,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Optimize et',
   'planner.openGoogleMaps': "Google Haritalar'da aç",
   'planner.openCoMaps': "CoMaps'te aç",
+  'planner.openAmap': 'Amap\'te aç',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': 'Gün planını görmek için soldaki listeden bir gün seçin',
   'planner.noPlacesForDay': 'Bu gün için henüz yer yok',
   'planner.addPlacesLink': 'Yer ekle →',

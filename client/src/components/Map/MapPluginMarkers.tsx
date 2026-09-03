@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { pluginsApi, type PluginMapMarker } from '../../api/client'
+import { toDisplayLatLng } from '../../utils/mapCrs'
 
 /**
  * Host-rendered overlay for the `mapMarkerProvider` plugin hook (#587). A plugin
@@ -31,7 +32,7 @@ function markerIcon(tone: PluginMapMarker['tone']): L.DivIcon {
   })
 }
 
-export function PluginMapMarkers({ tripId }: { tripId?: number | string }) {
+export function PluginMapMarkers({ tripId, gcjTiles = false }: { tripId?: number | string; gcjTiles?: boolean }) {
   const [markers, setMarkers] = useState<PluginMapMarker[]>([])
 
   useEffect(() => {
@@ -53,8 +54,10 @@ export function PluginMapMarkers({ tripId }: { tripId?: number | string }) {
 
   return (
     <>
-      {markers.map(mk => (
-        <Marker key={`${mk.pluginId}:${mk.id}`} position={[mk.lat, mk.lng]} icon={icons.get(mk.tone)!}>
+      {markers.map(mk => {
+        const pos = toDisplayLatLng(mk.lat, mk.lng, gcjTiles)
+        return (
+        <Marker key={`${mk.pluginId}:${mk.id}`} position={[pos.lat, pos.lng]} icon={icons.get(mk.tone)!}>
           {(mk.label || mk.popupText || mk.url) && (
             <Popup>
               <div style={{ minWidth: 120, fontSize: 13 }}>
@@ -69,7 +72,8 @@ export function PluginMapMarkers({ tripId }: { tripId?: number | string }) {
             </Popup>
           )}
         </Marker>
-      ))}
+        )
+      })}
     </>
   )
 }

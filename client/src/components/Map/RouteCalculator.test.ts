@@ -1,14 +1,17 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '../../../tests/helpers/msw/server'
-import { pluginsApi, type PluginRouteResult } from '../../api/client'
+import { mapsApi, pluginsApi, type PluginRouteResult } from '../../api/client'
+import { toAmap } from '@trek/shared'
 import { useSettingsStore } from '../../store/settingsStore'
+import { useAuthStore } from '../../store/authStore'
 import {
   calculateRoute,
   calculateRouteWithLegs,
   calculateSegments,
   optimizeRoute,
   generateGoogleMapsUrl,
+  generateAmapUrl,
   generateCoMapsUrl,
   parsePluginProfile,
   withHotelBookends,
@@ -254,6 +257,30 @@ describe('generateGoogleMapsUrl', () => {
   })
 })
 
+describe('generateAmapUrl', () => {
+  it('FE-COMP-ROUTECALCULATOR-AMAP-001: returns null for empty places', () => {
+    expect(generateAmapUrl([])).toBeNull()
+  })
+
+  it('FE-COMP-ROUTECALCULATOR-AMAP-002: a China pin converts WGS to a GCJ marker URL', () => {
+    const result = generateAmapUrl([{ lat: 39.907, lng: 116.391, name: '天安门' }])
+    const gcj = toAmap(39.907, 116.391)
+    expect(result).toMatch(/^https:\/\/uri\.amap\.com\/marker\?/)
+    expect(result).toContain('name=')
+    expect(result).toContain(`position=${gcj.lng},${gcj.lat}`)
+  })
+
+  it('FE-COMP-ROUTECALCULATOR-AMAP-003: two stops become a navigation URL', () => {
+    const result = generateAmapUrl([
+      { lat: 39.907, lng: 116.391, name: 'A' },
+      { lat: 39.916, lng: 116.397, name: 'B' },
+    ])
+    expect(result).toMatch(/^https:\/\/uri\.amap\.com\/navigation\?/)
+    expect(result).toContain('from=')
+    expect(result).toContain('to=')
+  })
+})
+
 // ── withHotelBookends (#1275: draw the hotel → first / last → hotel legs) ────────
 
 describe('withHotelBookends', () => {
@@ -389,6 +416,13 @@ afterEach(() => {
 })
 
 describe('calculateRouteWithLegs', () => {
+  // Built-in profiles only hit POST /api/maps/route when the instance reports an
+  // Amap key. Default off so the existing OSRM cases never probe the proxy.
+  beforeEach(() => {
+    useAuthStore.setState({ hasAmapKey: false })
+    vi.spyOn(mapsApi, 'route').mockResolvedValue({ route: null, source: 'unavailable' })
+  })
+
   it('FE-COMP-ROUTECALCULATOR-033: returns an empty route for fewer than 2 waypoints without calling OSRM', async () => {
     const result = await calculateRouteWithLegs([wp1])
     expect(result).toEqual({ coordinates: [], distance: 0, duration: 0, legs: [] })
@@ -478,6 +512,69 @@ describe('calculateRouteWithLegs', () => {
     expect(result.legs).toEqual([])
     expect(result.coordinates).toEqual([[48.85, 2.35]])
   })
+
+  it('FE-COMP-ROUTECALCULATOR-042b: prefers the Amap proxy when the server returns a route', async () => {
+    useAuthStore.setState({ hasAmapKey: true })
+    const wps = freshWaypoints()
+    const osrm = vi.fn()
+    server.use(http.get(`${FOSSGIS.driving}/:coords`, () => { osrm(); return HttpResponse.json(buildLegsResponse()) }))
+    vi.mocked(mapsApi.route).mockResolvedValue({
+      source: 'amap',
+      route: {
+        coordinates: [[39.9, 116.4], [31.2, 121.5]],
+        distance: 1200,
+        duration: 180,
+        legs: [{ distance: 1200, duration: 180 }],
+      },
+    })
+    const result = await calculateRouteWithLegs(wps, { profile: 'driving' })
+    expect(osrm).not.toHaveBeenCalled()
+    expect(mapsApi.route).toHaveBeenCalled()
+    expect(result.coordinates).toEqual([[39.9, 116.4], [31.2, 121.5]])
+    expect(result.distance).toBe(1200)
+    expect(result.legs[0].distanceText).toBe('1.2 km')
+    expect(result.legs[0].from).toEqual([wps[0].lat, wps[0].lng])
+  })
+
+  it('FE-COMP-ROUTECALCULATOR-042c: falls through to OSRM when the Amap proxy returns null', async () => {
+    useAuthStore.setState({ hasAmapKey: true })
+    server.use(http.get(`${FOSSGIS.driving}/:coords`, () => HttpResponse.json(buildLegsResponse())))
+    vi.mocked(mapsApi.route).mockResolvedValue({ route: null, source: 'amap_error' })
+    const result = await calculateRouteWithLegs(freshWaypoints())
+    expect(mapsApi.route).toHaveBeenCalled()
+    expect(result.distance).toBe(4200)
+  })
+
+  it('FE-COMP-ROUTECALCULATOR-042e: flipping hasAmapKey must not reuse the OSRM cache entry', async () => {
+    useAuthStore.setState({ hasAmapKey: false })
+    server.use(http.get(`${FOSSGIS.driving}/:coords`, () => HttpResponse.json(buildLegsResponse())))
+    const wps = freshWaypoints()
+    const osrm = await calculateRouteWithLegs(wps)
+    expect(mapsApi.route).not.toHaveBeenCalled()
+
+    useAuthStore.setState({ hasAmapKey: true })
+    vi.mocked(mapsApi.route).mockResolvedValue({
+      source: 'amap',
+      route: {
+        coordinates: [[1, 2], [3, 4]],
+        distance: 99,
+        duration: 10,
+        legs: [{ distance: 99, duration: 10 }],
+      },
+    })
+    const amap = await calculateRouteWithLegs(wps)
+    expect(mapsApi.route).toHaveBeenCalled()
+    expect(amap).not.toBe(osrm)
+    expect(amap.distance).toBe(99)
+  })
+
+  it('FE-COMP-ROUTECALCULATOR-042d: skips the Amap proxy when the instance has no key', async () => {
+    useAuthStore.setState({ hasAmapKey: false })
+    server.use(http.get(`${FOSSGIS.driving}/:coords`, () => HttpResponse.json(buildLegsResponse())))
+    const result = await calculateRouteWithLegs(freshWaypoints())
+    expect(mapsApi.route).not.toHaveBeenCalled()
+    expect(result.distance).toBe(4200)
+  })
 })
 
 describe('calculateRouteWithLegs plugin profiles', () => {
@@ -554,6 +651,7 @@ describe('calculateRouteWithLegs plugin profiles', () => {
 // would evict the entries the tests above rely on.
 describe('calculateRouteWithLegs cache eviction', () => {
   it('FE-COMP-ROUTECALCULATOR-049: the route cache is capped and drops its oldest entry', async () => {
+    vi.spyOn(mapsApi, 'route').mockResolvedValue({ route: null, source: 'unavailable' })
     const spy = vi.spyOn(pluginsApi, 'pluginRoute').mockResolvedValue({ route: pluginRouteResult() })
     const opts = { profile: 'plugin:ev-router/fastest', tripId: 99 }
     const oldest = freshWaypoints()

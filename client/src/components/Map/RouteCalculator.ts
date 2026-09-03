@@ -1,5 +1,7 @@
+import { toAmap } from '@trek/shared'
 import { useSettingsStore } from '../../store/settingsStore'
-import { pluginsApi } from '../../api/client'
+import { useAuthStore } from '../../store/authStore'
+import { mapsApi, pluginsApi } from '../../api/client'
 import type { DistanceUnit, RouteResult, RouteSegment, RouteWithLegs, Waypoint, RouteAnchors } from '../../types'
 import { formatDistance } from '../../utils/units'
 
@@ -114,6 +116,29 @@ export function generateGoogleMapsUrl(places: Waypoint[]): string | null {
   }
   const stops = valid.map((p) => `${p.lat},${p.lng}`).join('/')
   return `https://www.google.com/maps/dir/${stops}`
+}
+
+function amapPoint(p: NamedWaypoint | Waypoint): string {
+  const gcj = toAmap(p.lat, p.lng)
+  const name = 'name' in p && p.name?.trim() ? p.name.trim() : `${gcj.lng},${gcj.lat}`
+  return `${gcj.lng},${gcj.lat},${encodeURIComponent(name)}`
+}
+
+/** 高德 URI：单点标记，多点导航。库存是 WGS-84，出口转 GCJ。 */
+export function generateAmapUrl(places: NamedWaypoint[]): string | null {
+  const valid = places.filter((p) => p.lat && p.lng)
+  if (valid.length === 0) return null
+  if (valid.length === 1) {
+    const p = valid[0]
+    const gcj = toAmap(p.lat, p.lng)
+    const name = encodeURIComponent(p.name?.trim() || '')
+    return `https://uri.amap.com/marker?position=${gcj.lng},${gcj.lat}${name ? `&name=${name}` : ''}&src=trek&callnative=1`
+  }
+  const from = amapPoint(valid[0])
+  const to = amapPoint(valid[valid.length - 1])
+  const via = valid.slice(1, -1).map(amapPoint).join(';')
+  const viaQ = via ? `&via=${via}` : ''
+  return `https://uri.amap.com/navigation?from=${from}&to=${to}${viaQ}&mode=car&policy=1&src=trek&callnative=1`
 }
 
 /** A stop that can carry its name into a deep link that has somewhere to put one. */
@@ -278,10 +303,14 @@ export async function calculateSegments(
 }
 
 /**
- * One OSRM call per waypoint-run that returns BOTH the real road geometry (for the
+ * One route call per waypoint-run that returns BOTH the real road geometry (for the
  * map) and per-leg distance/duration (for the sidebar connectors). Results are cached
- * by the exact waypoint list. Throws on OSRM failure so callers can fall back to a
+ * by the exact waypoint list. Throws on router failure so callers can fall back to a
  * straight line.
+ *
+ * Built-in profiles prefer the instance Amap proxy (`POST /api/maps/route`) when a
+ * key is configured; `{ route: null }` or a failed proxy call falls through to the
+ * public OSRM hosts. Plugin profiles are unchanged.
  */
 export async function calculateRouteWithLegs(
   waypoints: Waypoint[],
@@ -298,7 +327,8 @@ export async function calculateRouteWithLegs(
   // the same coordinates on a different day), so its key includes tripId/dayId;
   // the built-in OSRM profiles are context-free and leave those out.
   const pluginScope = profile.startsWith('plugin:') ? `:${tripId ?? ''}:${dayId ?? ''}` : ''
-  const cacheKey = `${profile}:${getDistanceUnit()}:${coords}${pluginScope}`
+  const amapScope = useAuthStore.getState().hasAmapKey ? ':amap' : ''
+  const cacheKey = `${profile}:${getDistanceUnit()}:${coords}${pluginScope}${amapScope}`
   const cached = routeCache.get(cacheKey)
   if (cached) return cached
 
@@ -345,6 +375,51 @@ export async function calculateRouteWithLegs(
   }
 
   const osrmProfile = (profile === 'walking' || profile === 'cycling') ? profile : 'driving'
+
+  // Domestic installs with an Amap key: server proxies restapi.amap.com and returns
+  // WGS geometry (same CRS as stock places). Skip the round-trip entirely when the
+  // instance has no key (hasAmapKey comes from /api/auth/config — never send the secret itself).
+  if (useAuthStore.getState().hasAmapKey) {
+    try {
+      const proxied = await mapsApi.route(
+        { waypoints: waypoints.map((p) => ({ lat: p.lat, lng: p.lng })), profile: osrmProfile },
+        { signal },
+      )
+      if (proxied.route && proxied.route.legs.length === waypoints.length - 1) {
+        const legs: RouteSegment[] = proxied.route.legs.map((leg, i): RouteSegment => {
+          const from: [number, number] = [waypoints[i].lat, waypoints[i].lng]
+          const to: [number, number] = [waypoints[i + 1].lat, waypoints[i + 1].lng]
+          const mid: [number, number] = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2]
+          const walkingDuration = leg.distance / (5000 / 3600)
+          return {
+            mid, from, to,
+            distance: leg.distance,
+            duration: leg.duration,
+            walkingText: formatDuration(walkingDuration),
+            drivingText: formatDuration(leg.duration),
+            distanceText: formatRouteDistance(leg.distance),
+            durationText: formatDuration(leg.duration),
+          }
+        })
+        const result: RouteWithLegs = {
+          coordinates: proxied.route.coordinates,
+          distance: proxied.route.distance,
+          duration: proxied.route.duration,
+          legs,
+        }
+        routeCache.set(cacheKey, result)
+        if (routeCache.size > ROUTE_CACHE_MAX) {
+          const oldest = routeCache.keys().next().value
+          if (oldest !== undefined) routeCache.delete(oldest)
+        }
+        return result
+      }
+    } catch (err) {
+      if (signal?.aborted) throw err
+      // Proxy unreachable / rate-limited / aborted mid-flight without abort flag — keep OSRM.
+    }
+  }
+
   const url = `${OSRM_PROFILE_BASE[osrmProfile]}/${coords}?overview=full&geometries=geojson&annotations=distance,duration`
   const response = await fetch(url, { signal })
   if (!response.ok) throw new Error('Route could not be calculated')

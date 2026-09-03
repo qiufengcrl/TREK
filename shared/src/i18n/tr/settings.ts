@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Harita',
   'settings.mapTemplate': 'Harita Şablonu',
   'settings.mapTemplatePlaceholder.select': 'Şablon seçin...',
-  'settings.mapDefaultHint': 'OpenStreetMap için boş bırakın (varsayılan)',
+  'settings.mapDefaultHint': "Uygulama varsayılanı için boş bırakın (Amap anahtarı varsa Amap, yoksa OpenFreeMap)",
   'settings.mapHint': 'Harita kutucukları için URL şablonu',
   'settings.mapProvider': 'Harita Sağlayıcısı',
   'settings.mapProviderHint': 'Seyahat planlayıcı ve Journey haritalarını etkiler. Atlas her zaman Leaflet kullanır.',
@@ -334,8 +334,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Son kullanım',
   'settings.passkey.neverUsed': 'Hiç kullanılmadı',
   'settings.mapPoiPill': 'Haritada yerleri keşfet',
-  'settings.mapPoiPillHint':
-    "Yakındaki restoranları, otelleri ve daha fazlasını OpenStreetMap'ten bulmak için gezi haritasında bir kategori etiketi göster.",
+  'settings.mapPoiPillHint': 'Yakındaki restoranları, otelleri ve daha fazlasını bulmak için gezi haritasında bir kategori etiketi göster. Anahtar varsa Amap, yoksa OpenStreetMap kullanılır.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     "Uçuşları içe aktarmak ve senkronize etmek için kendi barındırdığınız AirTrail'i bağlayın. AirTrail'de Ayarlar → Güvenlik altından bir API anahtarı oluşturun.",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Circle, Polygon, Polyline, Tooltip, useMap } from 'react-leaflet'
 import { pluginsApi, type PluginMapLayer, type PluginMapLayerFeature } from '../../api/client'
+import { shiftLine, toDisplayLatLng } from '../../utils/mapCrs'
 
 /**
  * Host-rendered overlay for the `mapLayerProvider` plugin hook. A plugin returns
@@ -45,7 +46,7 @@ function pathOptions(f: PluginMapLayerFeature, pane: string | undefined) {
   }
 }
 
-export function PluginMapLayers({ tripId }: { tripId?: number | string }) {
+export function PluginMapLayers({ tripId, gcjTiles = false }: { tripId?: number | string; gcjTiles?: boolean }) {
   const map = useMap()
   const [layers, setLayers] = useState<PluginMapLayer[]>([])
   // Whether our dedicated below-overlay pane exists. Pane support is a Leaflet
@@ -80,13 +81,14 @@ export function PluginMapLayers({ tripId }: { tripId?: number | string }) {
         const key = `${layer.pluginId}:${layer.id}:${i}`
         const tooltip = f.label ? <Tooltip sticky>{f.label}</Tooltip> : null
         if (f.type === 'polyline' && f.points) {
-          return <Polyline key={key} positions={f.points} pathOptions={pathOptions(f, pane)}>{tooltip}</Polyline>
+          return <Polyline key={key} positions={shiftLine(f.points, gcjTiles)} pathOptions={pathOptions(f, pane)}>{tooltip}</Polyline>
         }
         if (f.type === 'polygon' && f.points) {
-          return <Polygon key={key} positions={f.points} pathOptions={pathOptions(f, pane)}>{tooltip}</Polygon>
+          return <Polygon key={key} positions={shiftLine(f.points, gcjTiles)} pathOptions={pathOptions(f, pane)}>{tooltip}</Polygon>
         }
         if (f.type === 'circle' && f.center && f.radiusM) {
-          return <Circle key={key} center={f.center} radius={f.radiusM} pathOptions={pathOptions(f, pane)}>{tooltip}</Circle>
+          const center = toDisplayLatLng(f.center[0], f.center[1], gcjTiles)
+          return <Circle key={key} center={[center.lat, center.lng]} radius={f.radiusM} pathOptions={pathOptions(f, pane)}>{tooltip}</Circle>
         }
         return null
       }))}

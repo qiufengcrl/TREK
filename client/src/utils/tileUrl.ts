@@ -1,3 +1,5 @@
+import { AMAP_TILE_MAXZOOM, MAP_MAX_ZOOM } from '../constants/mapDefaults'
+
 /**
  * OpenStreetMap has not needed the a/b/c.tile.openstreetmap.org subdomains
  * since 2022 — tile.openstreetmap.org serves the whole grid on its own — and
@@ -49,6 +51,58 @@ export function stripTileApiKey(url: string): string {
   return url.replace(/([?&])key=[^&]*&?/, '$1').replace(/[?&]$/, '')
 }
 
+/** Amap (Gaode) raster tile hosts — GCJ-02 tiles, `{s}` rotates 1–4. */
+export function isAmapTileUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  const host = templateHost(url).toLowerCase()
+  // Host suffix, not a substring: `foo-amap.com` / `exampleamap.com` are not Amap.
+  return /(?:^|\.)autonavi\.com$/.test(host) || /(?:^|\.)amap\.com$/.test(host)
+}
+
+/**
+ * Subdomains Leaflet / the prefetcher must rotate through for a template.
+ * Amap CDNs use 1–4; everything else keeps Leaflet's default a–c.
+ */
+export function tileSubdomainsFor(url: string | null | undefined): string {
+  return isAmapTileUrl(url) ? '1234' : 'abc'
+}
+
+/**
+ * Leaflet options every raster TileLayer here should share.
+ *
+ * Amap's CDN stops at z=18. The map ceiling is 19 (clusters, OSM, ESRI). If the
+ * Amap layer's own maxZoom sits at 18, Leaflet drops every tile the moment the
+ * wheel hits the map ceiling; if it sits at 19 with no maxNativeZoom, Leaflet
+ * requests empty z=19 placeholders. maxNativeZoom 18 + maxZoom 19 keeps z=18
+ * tiles on screen and scales them for the last step.
+ *
+ * updateWhenIdle is forced off: the planner used to wait until the wheel
+ * stopped, which combined with the ceiling bug to look like "only the last
+ * zoom shows the map".
+ */
+export type RasterTileLayerOptions = {
+  subdomains: string
+  maxZoom: number
+  maxNativeZoom?: number
+  updateWhenIdle: boolean
+  updateWhenZooming: boolean
+  keepBuffer: number
+  referrerPolicy: 'strict-origin-when-cross-origin'
+}
+
+export function rasterTileLayerOptions(url: string): RasterTileLayerOptions {
+  const amap = isAmapTileUrl(url)
+  return {
+    subdomains: tileSubdomainsFor(url),
+    maxZoom: MAP_MAX_ZOOM,
+    ...(amap ? { maxNativeZoom: AMAP_TILE_MAXZOOM } : {}),
+    updateWhenIdle: false,
+    updateWhenZooming: true,
+    keepBuffer: amap ? 4 : 8,
+    referrerPolicy: 'strict-origin-when-cross-origin',
+  }
+}
+
 /**
  * A CARTO template with no key behind it. Those tiles come back with "API KEY
  * REQUIRED" burned into them since 26.08.2026 (#2054), which is worse than any
@@ -69,7 +123,11 @@ function isKeylessCarto(url: string): boolean {
  * A blank template means "not configured", not "no tiles": the settings
  * previews save an empty string and would otherwise render grey.
  */
-export function resolveTileUrl(template: string | null | undefined, fallback: string, cartoKey?: string | null): string {
+export function resolveTileUrl(
+  template: string | null | undefined,
+  fallback: string,
+  cartoKey?: string | null,
+): string {
   const chosen = withTileApiKey(normalizeTileUrl(template?.trim() || fallback), cartoKey)
   return isKeylessCarto(chosen) ? fallback : chosen
 }

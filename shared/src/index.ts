@@ -63,6 +63,10 @@ export * from './realtime/events.schema';
 // has them ready if rich-text input ever ships.
 export * from './sanitize/sanitize';
 
+// China geodesy + Amap share-host allow-list (client and server share one copy).
+export * from './geo/gcj02';
+export * from './geo/amap-url';
+
 // i18n registry (language list + pure helpers — no locale data)
 export * from './i18n/languages';
 

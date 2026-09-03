@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HttpException } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 
 import { MapsController } from '../../../src/nest/maps/maps.controller';
 import type { MapsService } from '../../../src/nest/maps/maps.service';
 import type { StorageService } from '../../../src/nest/storage/storage.service';
+import { RateLimitService } from '../../../src/nest/common/rate-limit.service';
 import type { User } from '../../../src/types';
 
 const user = { id: 3 } as User;
@@ -14,8 +16,12 @@ const user = { id: 3 } as User;
 const getStream = vi.fn();
 const storageStub = { getStream } as unknown as StorageService;
 
-function makeController(svc: Partial<MapsService>) {
-  return new MapsController(svc as MapsService, storageStub);
+function makeReq(): Request {
+  return new EventEmitter() as unknown as Request;
+}
+
+function makeController(svc: Partial<MapsService>, rl = new RateLimitService()) {
+  return new MapsController(svc as MapsService, storageStub, rl);
 }
 
 /** Run an async handler, expecting an HttpException; return its { status, body }. */
@@ -402,6 +408,37 @@ describe('MapsController (parity with the legacy /api/maps route)', () => {
       const reverse = vi.fn().mockResolvedValue({ name: null, address: null });
       await makeController({ reverse }).reverse('1', '2', 'fr');
       expect(reverse).toHaveBeenCalledWith('1', '2', 'fr');
+    });
+  });
+
+  describe('POST /route', () => {
+    const waypoints = [
+      { lat: 39.9, lng: 116.4 },
+      { lat: 31.2, lng: 121.5 },
+    ];
+
+    it('delegates waypoints and profile to the service with an abort signal', async () => {
+      const route = vi.fn().mockResolvedValue({ route: null, source: 'unavailable' });
+      const res = await makeController({ route }).route(user, { waypoints, profile: 'walking' }, makeReq());
+      expect(res).toEqual({ route: null, source: 'unavailable' });
+      expect(route).toHaveBeenCalledWith(3, waypoints, 'walking', expect.any(AbortSignal));
+    });
+
+    it('maps a service error to its status + message', async () => {
+      const route = vi.fn().mockRejectedValue(withError(502, 'upstream'));
+      expect(await thrown(() => makeController({ route }).route(user, { waypoints, profile: 'driving' }, makeReq()))).toEqual({
+        status: 502, body: { error: 'upstream' },
+      });
+    });
+
+    it('429 when the per-user route bucket is exhausted', async () => {
+      const route = vi.fn();
+      const rl = { check: vi.fn().mockReturnValue(false) } as unknown as RateLimitService;
+      expect(await thrown(() => makeController({ route }, rl).route(user, { waypoints, profile: 'driving' }, makeReq()))).toEqual({
+        status: 429,
+        body: { error: 'Too many route requests. Please try again later.' },
+      });
+      expect(route).not.toHaveBeenCalled();
     });
   });
 });

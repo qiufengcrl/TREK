@@ -48,6 +48,8 @@ const planner: TranslationStrings = {
   'planner.optimize': '최적화',
   'planner.openGoogleMaps': 'Google Maps에서 열기',
   'planner.openCoMaps': 'CoMaps에서 열기',
+  'planner.openAmap': 'Amap에서 열기',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': '왼쪽 목록에서 날을 선택하여 일별 계획을 보세요',
   'planner.noPlacesForDay': '이 날에 아직 장소가 없습니다',
   'planner.addPlacesLink': '장소 추가 →',

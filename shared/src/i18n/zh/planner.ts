@@ -48,6 +48,8 @@ const planner: TranslationStrings = {
   'planner.optimize': '优化',
   'planner.openGoogleMaps': '在 Google Maps 中打开',
   'planner.openCoMaps': '在 CoMaps 中打开',
+  'planner.openAmap': '在高德中打开',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': '从左侧列表选择一天以查看日程计划',
   'planner.noPlacesForDay': '当天暂无地点',
   'planner.addPlacesLink': '添加地点 →',

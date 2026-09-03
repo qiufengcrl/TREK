@@ -56,6 +56,29 @@ export class BookingImportService {
     return this.llmParse.isAvailable(userId);
   }
 
+  /** CJK in the query/context → Amap-first search; otherwise Nominatim only. */
+  private looksDomestic(text: string): boolean {
+    return /[\u3400-\u9fff]/.test(text);
+  }
+
+  private async geocodeVenue(
+    userId: number,
+    query: string,
+    context?: { location?: string | null; address?: string | null },
+  ): Promise<{ lat: number; lng: number } | null> {
+    const domestic = this.looksDomestic([query, context?.location, context?.address].filter(Boolean).join(' '));
+    if (domestic) {
+      const { places } = await this.maps.searchPlaces(userId, query, undefined, undefined, 'background');
+      const hit = places[0] as { lat?: number | null; lng?: number | null } | undefined;
+      if (hit?.lat != null && hit.lng != null) return { lat: hit.lat, lng: hit.lng };
+      return null;
+    }
+    const places = await this.maps.searchNominatim(query, undefined, 'background');
+    const hit = places[0] as { lat?: number | null; lng?: number | null } | undefined;
+    if (hit?.lat != null && hit.lng != null) return { lat: hit.lat, lng: hit.lng };
+    return null;
+  }
+
   /**
    * Parse uploaded files and return a preview list. Does NOT persist anything.
    * Runs kitinerary first; depending on `mode`, falls back to the LLM:
@@ -92,6 +115,7 @@ export class BookingImportService {
     endpoints: { name?: string | null; lat?: number | null; lng?: number | null }[] | undefined,
     context: { location?: string | null; address?: string | null },
     cache: Map<string, { lat: number; lng: number } | null>,
+    userId: number,
   ): Promise<string[]> {
     if (!Array.isArray(endpoints)) return [];
     const unresolved: string[] = [];
@@ -116,8 +140,8 @@ export class BookingImportService {
       let found: { lat: number; lng: number } | null = null;
       try {
         for (const q of queries) {
-          const hit = (await this.maps.searchNominatim(q, undefined, 'background'))[0];
-          if (hit?.lat != null && hit?.lng != null) { found = { lat: hit.lat, lng: hit.lng }; break; }
+          const hit = await this.geocodeVenue(userId, q, context);
+          if (hit) { found = hit; break; }
         }
       } catch {
         // geocoding failure is non-fatal — the endpoint stays, and is warned about
@@ -189,6 +213,7 @@ export class BookingImportService {
             (it as { endpoints?: { name?: string | null; lat?: number | null; lng?: number | null }[] }).endpoints,
             { location: (it as { location?: string | null }).location, address: (it as { _venue?: { address?: string | null } })._venue?.address },
             geoCache,
+            userId,
           );
           // Kept on the item rather than filtered, so it is still editable in the
           // review form, and said out loud rather than disappearing on save.
@@ -240,9 +265,8 @@ export class BookingImportService {
               ].filter((q): q is string => !!q);
 
               for (const q of queries) {
-                const results = await this.maps.searchNominatim(q, undefined, 'background');
-                const hit = results[0];
-                if (hit?.lat != null && hit?.lng != null) {
+                const hit = await this.geocodeVenue(0, q, { location: reservationData.location as string | null | undefined, address: _venue.address });
+                if (hit) {
                   lat = hit.lat;
                   lng = hit.lng;
                   break;
@@ -274,6 +298,7 @@ export class BookingImportService {
             reservationData.endpoints,
             { location: (reservationData as { location?: string | null }).location, address: _venue?.address },
             confirmGeoCache,
+            0,
           );
           // Persist only coord'd endpoints (reservation_endpoints needs lat/lng);
           // ungeocodable ones still appeared in the preview's From→To.

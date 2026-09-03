@@ -49,6 +49,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Βελτιστοποίηση',
   'planner.openGoogleMaps': 'Άνοιγμα στο Google Maps',
   'planner.openCoMaps': 'Άνοιγμα στο CoMaps',
+  'planner.openAmap': 'Άνοιγμα στο Amap',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': 'Επιλέξτε μια ημέρα από την αριστερή λίστα για να δείτε το πρόγραμμα',
   'planner.noPlacesForDay': 'Δεν υπάρχουν τοποθεσίες για αυτή την ημέρα ακόμη',
   'planner.addPlacesLink': 'Προσθήκη τοποθεσιών \u2192',

@@ -23,7 +23,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Kaart',
   'settings.mapTemplate': 'Kaartsjabloon',
   'settings.mapTemplatePlaceholder.select': 'Selecteer sjabloon...',
-  'settings.mapDefaultHint': 'Laat leeg voor OpenStreetMap (standaard)',
+  'settings.mapDefaultHint': "Laat leeg voor de app-standaard (Amap als er een Amap-sleutel is, anders OpenFreeMap)",
   'settings.mapHint': 'URL-sjabloon voor kaarttegels',
   'settings.mapProvider': 'Kaartprovider',
   'settings.mapProviderHint': 'Geldt voor Trip Planner en Journey kaarten. Atlas gebruikt altijd Leaflet.',
@@ -337,8 +337,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Laatst gebruikt',
   'settings.passkey.neverUsed': 'Nooit gebruikt',
   'settings.mapPoiPill': 'Plaatsen op de kaart ontdekken',
-  'settings.mapPoiPillHint':
-    'Toon een categorielabel op de reiskaart om restaurants, hotels en meer in de buurt te vinden via OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Toon een categorielabel op de reiskaart om restaurants, hotels en meer in de buurt te vinden. Gebruikt Amap als er een sleutel is, anders OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Verbind je zelf-gehoste AirTrail om vluchten te importeren en te synchroniseren. Maak een API-sleutel aan in AirTrail onder Instellingen → Beveiliging.',

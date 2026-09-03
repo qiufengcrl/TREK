@@ -78,12 +78,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Użytkownicy bez 2FA muszą ukończyć konfigurację w Ustawieniach zanim zaczną korzystać z aplikacji.',
   'admin.apiKeys': 'Klucze API',
-  'admin.apiKeysHint':
-    'Opcjonalne. Umożliwiają pobieranie większej ilości danych o miejscach, takich jak zdjęcia i pogoda.',
+  'admin.apiKeysHint': 'Opcjonalne. Klucz Amap jest używany jako pierwszy do wyszukiwania miejsc, kafelków, tras i pogody w Chinach. Klucz Google dodaje zdjęcia, oceny i godziny otwarcia.',
+  'admin.amapKey': 'Klucz API WWW Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Po ustawieniu wyszukiwanie miejsc, autouzupełnianie, szczegóły i odwrotne geokodowanie najpierw korzystają z Amap. Pusty wynik lub błąd przechodzi do OpenStreetMap (Google jest pomijany). Klucz usługi WWW: console.amap.com. Nie wklejaj go w pole Google.',
   'admin.mapsKey': 'Klucz Google Maps API',
   'admin.mapsKeyHint': 'Wymagany do wyszukiwania miejsc. Uzyskaj go na console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Bez klucza API, OpenStreetMap jest wykorzystywany do wyszukiwania miejsc. Z kluczem API Google, zdjęcia, oceny i godziny otwarcia również mogą być pobierane. Uzyskaj go na console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Używany, gdy nie ustawiono klucza Amap. Bez klucza Google lub Amap wyszukiwanie korzysta z OpenStreetMap. Klucz Google może też pobierać zdjęcia, oceny i godziny otwarcia. Uzyskaj go na console.cloud.google.com.',
   'admin.recommended': 'Polecane',
   'admin.weatherKey': 'Klucz OpenWeatherMap API',
   'admin.weatherKeyHint': 'Do danych pogodowych. Uzyskaj go bezpłatnie na openweathermap.org',

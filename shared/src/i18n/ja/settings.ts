@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': '地図',
   'settings.mapTemplate': '地図テンプレート',
   'settings.mapTemplatePlaceholder.select': 'テンプレートを選択…',
-  'settings.mapDefaultHint': '空欄の場合は OpenStreetMap（既定）を使用',
+  'settings.mapDefaultHint': "空欄の場合はアプリの既定地図を使用（Amap キーがある場合は Amap、なければ OpenFreeMap）",
   'settings.mapHint': '地図タイルのURLテンプレート',
   'settings.mapProvider': '地図プロバイダー',
   'settings.mapProviderHint': '旅程プランナーと日記地図に影響します。Atlas は常に Leaflet を使用します。',
@@ -310,8 +310,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': '最終使用',
   'settings.passkey.neverUsed': '未使用',
   'settings.mapPoiPill': '地図でスポットを探す',
-  'settings.mapPoiPillHint':
-    '旅行の地図にカテゴリピルを表示して、OpenStreetMapから近くのレストランや宿泊施設などを見つけられます。',
+  'settings.mapPoiPillHint': '旅行の地図にカテゴリピルを表示して、近くのレストランや宿泊施設などを見つけられます。キーがあるときは Amap、なければ OpenStreetMap を使います。',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'セルフホストの AirTrail を接続して、フライトをインポート・同期します。AirTrail の「設定 → セキュリティ」で API キーを作成してください。',

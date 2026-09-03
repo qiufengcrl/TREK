@@ -9,7 +9,7 @@ import {
   channelTestResultSchema,
   mapsSearchResultSchema, mapsAutocompleteResultSchema, mapsPlaceDetailsResultSchema,
   mapsPlacePhotoResultSchema, mapsReverseResultSchema, mapsResolveUrlResultSchema,
-  mapsPlaceEnrichmentResultSchema,
+  mapsRouteResultSchema, mapsPlaceEnrichmentResultSchema,
   type NotificationRespondRequest,
   type SettingUpsertRequest, type SettingsBulkRequest,
   type JourneyCreateRequest, type JourneyAddTripRequest, type JourneyTracksResponse,
@@ -303,7 +303,8 @@ export const authApi = {
   deleteAvatar: () => apiClient.delete('/auth/avatar').then(r => r.data),
   getAppConfig: () => apiClient.get('/auth/app-config').then(r => r.data),
   updateAppSettings: (data: Record<string, unknown>) => apiClient.put('/auth/app-settings', data).then(r => r.data),
-  validateKeys: () => apiClient.get('/auth/validate-keys').then(r => r.data),
+  validateKeys: (only?: 'maps' | 'weather' | 'amap') =>
+    apiClient.get('/auth/validate-keys', { params: only ? { only } : undefined }).then(r => r.data),
   travelStats: () => apiClient.get('/auth/travel-stats').then(r => r.data),
   changePassword: (data: ChangePasswordRequest) => apiClient.put('/auth/me/password', data).then(r => r.data),
   forgotPassword: (data: ForgotPasswordRequest) => apiClient.post('/auth/forgot-password', data).then(r => r.data as { ok: true }),
@@ -1027,6 +1028,16 @@ export const mapsApi = {
   placePhoto: (placeId: string, lat?: number, lng?: number, name?: string) => apiClient.get(`/maps/place-photo/${encodeURIComponent(placeId)}`, { params: { lat, lng, name } }).then(r => checkInDev(mapsPlacePhotoResultSchema, r.data, 'maps.placePhoto')),
   reverse: (lat: number, lng: number, lang?: string) => apiClient.get('/maps/reverse', { params: { lat, lng, lang } }).then(r => checkInDev(mapsReverseResultSchema, r.data, 'maps.reverse')),
   resolveUrl: (url: string) => apiClient.post('/maps/resolve-url', { url }).then(r => checkInDev(mapsResolveUrlResultSchema, r.data, 'maps.resolveUrl')),
+  // Amap-backed road geometry when the instance has a key; `{ route: null }` means
+  // the client should keep using public OSRM. Longer timeout — multi-leg days fan
+  // out to one Amap call per pair server-side.
+  route: (
+    body: { waypoints: Array<{ lat: number; lng: number }>; profile?: 'driving' | 'walking' | 'cycling' },
+    opts: { signal?: AbortSignal } = {},
+  ) =>
+    apiClient
+      .post('/maps/route', body, { signal: opts.signal, timeout: 25000 })
+      .then((r) => checkInDev(mapsRouteResultSchema, r.data, 'maps.route')),
   // OSM-only POI explore: places of a category within the current map viewport bbox.
   // Overpass can be slow on a fresh (uncached) area, so this call gets a longer
   // timeout than the global default instead of aborting at 8s and showing nothing.

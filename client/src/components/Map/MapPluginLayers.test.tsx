@@ -33,6 +33,7 @@ vi.mock('react-leaflet', () => ({
 }))
 
 import { PluginMapLayers } from './MapPluginLayers'
+import { toAmap } from '@trek/shared'
 
 function paneMap(preexisting = false) {
   const panes = new Map<string, HTMLElement>()
@@ -207,5 +208,26 @@ describe('PluginMapLayers', () => {
     rerender(<PluginMapLayers tripId={9} />)
 
     await waitFor(() => expect(screen.queryByTestId('polyline')).toBeNull())
+  })
+
+  it('FE-COMP-MAPPLUGINLAYERS-010: Amap tiles shift China polylines and circle centres', async () => {
+    const a: [number, number] = [39.907, 116.391]
+    const b: [number, number] = [31.23, 121.47]
+    serveLayers([layer([
+      feature({ points: [a, b] }),
+      feature({ type: 'circle', points: undefined, center: a, radiusM: 400 }),
+    ])])
+
+    render(<PluginMapLayers tripId={4} gcjTiles />)
+    const line = await screen.findByTestId('polyline')
+    const gcjA = toAmap(a[0], a[1])
+    const gcjB = toAmap(b[0], b[1])
+    expect(JSON.parse(line.getAttribute('data-points') || '[]')).toEqual([
+      [gcjA.lat, gcjA.lng],
+      [gcjB.lat, gcjB.lng],
+    ])
+    const center = JSON.parse(screen.getByTestId('circle').getAttribute('data-center') || '[]') as [number, number]
+    expect(center[0]).toBeCloseTo(gcjA.lat, 5)
+    expect(center[1]).toBeCloseTo(gcjA.lng, 5)
   })
 })

@@ -13,7 +13,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Mapa',
   'settings.mapTemplate': 'Plantilla del mapa',
   'settings.mapTemplatePlaceholder.select': 'Selecciona una plantilla...',
-  'settings.mapDefaultHint': 'Deixa-ho buit per a OpenStreetMap (per defecte)',
+  'settings.mapDefaultHint': "Deixa-ho buit per al mapa predeterminat de l'app (Amap si hi ha clau d'Amap; si no, OpenFreeMap)",
   'settings.mapHint': "Plantilla d'URL per als mosaics del mapa",
   'settings.mapProvider': 'Proveïdor de mapa',
   'settings.mapProviderHint': 'Afecta els mapes de Trip Planner i Journey. Atles sempre utilitza Leaflet.',
@@ -309,8 +309,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Últim ús',
   'settings.passkey.neverUsed': 'Mai utilitzada',
   'settings.mapPoiPill': 'Explora llocs al mapa',
-  'settings.mapPoiPillHint':
-    "Mostra una píndola de categories al mapa del viatge per trobar restaurants, allotjaments i més a prop, des d'OpenStreetMap.",
+  'settings.mapPoiPillHint': 'Mostra una píndola de categories al mapa del viatge per trobar restaurants, allotjaments i més a prop. Usa Amap si hi ha clau; si no, OpenStreetMap.',
 
   'settings.mapMapLibreSubtitle': "Tessel·les vectorials d'OpenFreeMap, sense token",
   'settings.mapOpenFreeMapStylePlaceholder': "Selecciona un estil d'OpenFreeMap",

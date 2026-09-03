@@ -15,6 +15,12 @@ Type in the search box at the top of the form. After 2 or more characters, with 
 - Use **↑ / ↓** to navigate results, **Enter** to select, **Esc** to dismiss.
 - Search results are biased toward the geographic center of your existing trip places. When those places span more than ~500 km, the bias is skipped.
 
+### With an Amap (Gaode) key
+
+> **Admin:** For installs in China, set a 高德 **Web 服务** key in **Admin → Settings → API Keys**, or `AMAP_API_KEY` in the environment. Do **not** put an Amap key in the Google field.
+
+When an Amap key is present, place search, autocomplete, details and reverse geocoding try **Amap first**. An empty search/autocomplete result or an upstream error falls through directly to Nominatim — Google is skipped, because it is often unreachable from mainland China. Reverse geocode is stricter on **errors** in mainland China (Nominatim is often blocked); an **empty** Amap reverse still falls through so border / HK·Macau cases are not left blank. Without an Amap key, the chain remains Google (if configured) and then Nominatim. Place ids stay provider-specific (`amap:…`, Google, `node:…`). **Stored coordinates are WGS-84.** TREK converts to GCJ-02 only at the Amap API / share-link / tile boundary, so Google, Nominatim, OSRM and OFM/OSM tiles stay aligned.
+
 ### With a Google Maps API key
 
 > **Admin:** The Google Maps API key is instance-wide, set in **Admin → Settings → API Keys**. It is stored encrypted at rest and used for every member of the instance; on managed instances the operator supplies it and the panel is hidden.
@@ -23,9 +29,9 @@ When a key is present, the autocomplete uses the Google Places API, which can re
 
 > **API key restrictions:** TREK calls the Google Places API from the server, not the browser. If you apply **HTTP referrers** restrictions to your key in Google Cloud Console, you must also set `APP_URL` in your environment — TREK sends it as the `Referer` header on every outbound Google API request. Without it, Google will reject all server-side calls with `REQUEST_DENIED`. For server-side deployments, **IP address** restrictions are simpler and require no extra configuration. See [Troubleshooting](Troubleshooting) if photos are missing after adding a key.
 
-### Without a Google Maps API key
+### Without a Google Maps or Amap API key
 
-TREK falls back to OpenStreetMap (Nominatim) automatically — no API key needed. A notice appears above the search box — *Using OpenStreetMap. A Google API key adds ratings and opening hours.* Results include name, address, and coordinates.
+TREK falls back to OpenStreetMap (Nominatim) automatically — no API key needed. A notice appears above the search box — *Using OpenStreetMap. A Google API key adds ratings and opening hours.* Results include name, address, and coordinates. From networks that cannot reach `nominatim.openstreetmap.org` (common in mainland China), configure an Amap key instead.
 
 ## Place details while searching
 
@@ -53,9 +59,15 @@ Pictures are copied to your own server and served from there — nothing is load
 
 The column is desktop-only; the mobile place sheet is unchanged.
 
-## Pasting a Google Maps URL
+## Pasting a Google Maps or Amap URL
 
-Paste a `maps.app.goo.gl/…`, `goo.gl/maps/…`, or `maps.google.*/…` URL directly into the search box and press the search button. TREK resolves it server-side and populates the name, address, and coordinates.
+Paste a `maps.app.goo.gl/…`, `goo.gl/maps/…`, `maps.google.*/…`, `uri.amap.com/…`, or `surl.amap.com/…` URL directly into the search box and press the search button. TREK resolves it server-side and populates the name, address, and coordinates. Amap share coordinates are converted from GCJ-02 to WGS-84 before they are stored.
+
+## Map tiles in China
+
+Trip places use **WGS-84**. With an Amap Web-service key configured, the trip planner defaults to the **Amap (Gaode)** raster preset and the satellite toggle uses Amap imagery (plus labels); pins and route lines are shifted to GCJ only for display on those tiles. Explore-pill POIs, reverse geocode (mainland), booking-import geocoding, place photos for `amap:*` ids, and weather (mainland) also prefer Amap when a key is set. A day plan can also be opened in the Amap app via **Open in Amap** (coordinates converted WGS → GCJ in the URL).
+
+Transit directions still use **Transitous** (not Amap transit). Replacing or dual-running Amap 公交/路径规划 is deferred — evaluate product need before swapping the planner's transit provider.
 
 ## Entering coordinates manually
 

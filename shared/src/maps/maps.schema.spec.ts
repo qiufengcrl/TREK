@@ -3,6 +3,8 @@ import {
   mapsAutocompleteRequestSchema,
   mapsReverseQuerySchema,
   mapsResolveUrlRequestSchema,
+  mapsRouteRequestSchema,
+  mapsRouteResultSchema,
   mapsPlaceEnrichmentRequestSchema,
   mapsPlaceEnrichmentResultSchema,
   placePhotoCandidateSchema,
@@ -62,6 +64,56 @@ describe('mapsResolveUrlRequestSchema', () => {
       }).success,
     ).toBe(true);
     expect(mapsResolveUrlRequestSchema.safeParse({ url: '' }).success).toBe(false);
+  });
+});
+
+describe('mapsRouteRequestSchema', () => {
+  const pair = [
+    { lat: 39.9, lng: 116.4 },
+    { lat: 31.2, lng: 121.5 },
+  ];
+
+  it('needs at least two waypoints and defaults profile to driving', () => {
+    const parsed = mapsRouteRequestSchema.safeParse({ waypoints: pair });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.profile).toBe('driving');
+    expect(mapsRouteRequestSchema.safeParse({ waypoints: [pair[0]] }).success).toBe(false);
+  });
+
+  it('accepts walking/cycling and rejects more than 30 waypoints', () => {
+    expect(mapsRouteRequestSchema.safeParse({ waypoints: pair, profile: 'walking' }).success).toBe(true);
+    expect(mapsRouteRequestSchema.safeParse({ waypoints: pair, profile: 'hovercraft' }).success).toBe(false);
+    const tooMany = Array.from({ length: 31 }, (_, i) => ({ lat: 39 + i * 0.01, lng: 116 }));
+    expect(mapsRouteRequestSchema.safeParse({ waypoints: tooMany }).success).toBe(false);
+  });
+
+  it('rejects out-of-range lat/lng', () => {
+    expect(mapsRouteRequestSchema.safeParse({
+      waypoints: [{ lat: 91, lng: 0 }, { lat: 0, lng: 0 }],
+    }).success).toBe(false);
+    expect(mapsRouteRequestSchema.safeParse({
+      waypoints: [{ lat: 0, lng: 181 }, { lat: 0, lng: 0 }],
+    }).success).toBe(false);
+  });
+});
+
+describe('mapsRouteResultSchema', () => {
+  it('allows a null route for the OSRM fallback envelope', () => {
+    expect(mapsRouteResultSchema.safeParse({ route: null, source: 'unavailable' }).success).toBe(true);
+    expect(
+      mapsRouteResultSchema.safeParse({
+        route: {
+          coordinates: [
+            [39.9, 116.4],
+            [31.2, 121.5],
+          ],
+          distance: 1000,
+          duration: 120,
+          legs: [{ distance: 1000, duration: 120 }],
+        },
+        source: 'amap',
+      }).success,
+    ).toBe(true);
   });
 });
 

@@ -121,6 +121,7 @@ function createTables(db: Database.Database): void {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- places.lat/lng and collection_places.lat/lng are WGS-84 (see shared/geo/gcj02.ts).
     CREATE TABLE IF NOT EXISTS places (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
@@ -407,6 +408,7 @@ function createTables(db: Database.Database): void {
       UNIQUE(collection_id, user_id)
     );
 
+    -- collection_places.lat/lng are WGS-84 (same CRS as places).
     CREATE TABLE IF NOT EXISTS collection_places (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,

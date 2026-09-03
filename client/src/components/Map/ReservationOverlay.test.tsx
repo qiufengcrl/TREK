@@ -6,6 +6,7 @@ import { act, fireEvent } from '@testing-library/react'
 import { resetAllStores, seedStore } from '../../../tests/helpers/store'
 import { useSettingsStore } from '../../store/settingsStore'
 import type { Reservation, ReservationEndpoint } from '../../types'
+import { toAmap } from '@trek/shared'
 
 // The Leaflet map jsdom cannot provide: panes are a plain map, and the
 // projection is a linear lat/lng → pixel scale so the tests can put endpoints a
@@ -153,6 +154,29 @@ describe('ReservationOverlay', () => {
     expect(markers()[0].getAttribute('data-pane')).toBe('reservation-endpoints')
     expect(markers()[0].getAttribute('data-zindex')).toBe('1000')
     expect(markers().map(m => m.getAttribute('data-lat'))).toEqual(['48', '51.5'])
+  })
+
+  it('FE-COMP-RESOVERLAY-003b: Amap tiles draw Beijing endpoints on GCJ', () => {
+    const from = { lat: 39.907, lng: 116.391 }
+    const to = { lat: 31.23, lng: 121.47 }
+    renderOverlay({
+      gcjTiles: true,
+      reservations: [booking({
+        endpoints: [
+          endpoint({ role: 'from', sequence: 0, name: 'Beijing', lat: from.lat, lng: from.lng }),
+          endpoint({ role: 'to', sequence: 1, name: 'Shanghai', lat: to.lat, lng: to.lng }),
+        ],
+      })],
+    })
+    const gcjFrom = toAmap(from.lat, from.lng)
+    const gcjTo = toAmap(to.lat, to.lng)
+    expect(Number(markers()[0].getAttribute('data-lat'))).toBeCloseTo(gcjFrom.lat, 5)
+    expect(Number(markers()[0].getAttribute('data-lng'))).toBeCloseTo(gcjFrom.lng, 5)
+    expect(Number(markers()[1].getAttribute('data-lat'))).toBeCloseTo(gcjTo.lat, 5)
+    expect(Number(markers()[1].getAttribute('data-lng'))).toBeCloseTo(gcjTo.lng, 5)
+    const pts = JSON.parse(lines()[0].getAttribute('data-points') || '[]') as [number, number][]
+    expect(pts[0][0]).toBeCloseTo(gcjFrom.lat, 5)
+    expect(pts[0][1]).toBeCloseTo(gcjFrom.lng, 5)
   })
 
   it('FE-COMP-RESOVERLAY-004: a flight is drawn as a geodesic arc, not a two-point line', () => {

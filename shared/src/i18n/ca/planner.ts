@@ -49,6 +49,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Optimitza',
   'planner.openGoogleMaps': 'Obre a Google Maps',
   'planner.openCoMaps': 'Obre a CoMaps',
+  'planner.openAmap': 'Obre a Amap',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': "Selecciona un dia de la llista de l'esquerra per veure el seu pla",
   'planner.noPlacesForDay': 'Encara no hi ha llocs per a aquest dia',
   'planner.addPlacesLink': 'Afegeix llocs →',

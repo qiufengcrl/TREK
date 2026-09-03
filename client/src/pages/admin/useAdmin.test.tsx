@@ -146,7 +146,7 @@ describe('useAdmin', () => {
     server.use(
       http.get('/api/auth/me/settings', () =>
         HttpResponse.json({
-          settings: { maps_api_key: 'maps-k', openweather_api_key: 'weather-k', unsplash_api_key: 'unsplash-k' },
+          settings: { maps_api_key: 'maps-k', openweather_api_key: 'weather-k', unsplash_api_key: 'unsplash-k', amap_api_key: 'amap-k' },
         })
       )
     );
@@ -156,6 +156,7 @@ describe('useAdmin', () => {
     await waitFor(() => expect(result.current.mapsKey).toBe('maps-k'));
     expect(result.current.weatherKey).toBe('weather-k');
     expect(result.current.unsplashKey).toBe('unsplash-k');
+    expect(result.current.amapKey).toBe('amap-k');
   });
 
   it('FE-ADMHOOK-008: a failing settings request leaves the keys empty', async () => {
@@ -336,12 +337,13 @@ describe('useAdmin', () => {
       result.current.setMapsKey('m');
       result.current.setWeatherKey('w');
       result.current.setUnsplashKey('u');
+      result.current.setAmapKey('a');
     });
     await act(async () => {
       await result.current.handleSaveApiKeys();
     });
 
-    expect(body).toMatchObject({ maps_api_key: 'm', openweather_api_key: 'w', unsplash_api_key: 'u' });
+    expect(body).toMatchObject({ maps_api_key: 'm', openweather_api_key: 'w', unsplash_api_key: 'u', amap_api_key: 'a' });
     expect(toastCalls).toContainEqual({ type: 'success', message: 'API keys saved' });
     expect(result.current.savingKeys).toBe(false);
   });
@@ -388,7 +390,10 @@ describe('useAdmin', () => {
   it('FE-ADMHOOK-023: handleValidateKey stores only the requested key', async () => {
     server.use(
       http.put('/api/auth/me/api-keys', () => HttpResponse.json({ success: true })),
-      http.get('/api/auth/validate-keys', () => HttpResponse.json({ maps: false, weather: true }))
+      http.get('/api/auth/validate-keys', ({ request }) => {
+        expect(new URL(request.url).searchParams.get('only')).toBe('maps');
+        return HttpResponse.json({ maps: false, weather: true });
+      })
     );
     const { result } = await mountAdmin();
 

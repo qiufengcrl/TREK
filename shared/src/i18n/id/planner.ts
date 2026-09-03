@@ -49,6 +49,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Optimalkan',
   'planner.openGoogleMaps': 'Buka di Google Maps',
   'planner.openCoMaps': 'Buka di CoMaps',
+  'planner.openAmap': 'Buka di Amap',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': 'Pilih hari dari daftar kiri untuk melihat rencana hari',
   'planner.noPlacesForDay': 'Belum ada tempat untuk hari ini',
   'planner.addPlacesLink': 'Tambah tempat →',

@@ -48,6 +48,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Optimalizovat',
   'planner.openGoogleMaps': 'Otevřít v Google Mapách',
   'planner.openCoMaps': 'Otevřít v CoMaps',
+  'planner.openAmap': 'Otevřít v Amap',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': 'Vyberte den ze seznamu vlevo pro zobrazení denního plánu',
   'planner.noPlacesForDay': 'Zatím žádná místa pro tento den',
   'planner.addPlacesLink': 'Přidat místa →',

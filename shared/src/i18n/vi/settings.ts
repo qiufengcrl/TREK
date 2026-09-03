@@ -22,7 +22,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Bản đồ',
   'settings.mapTemplate': 'Mẫu bản đồ',
   'settings.mapTemplatePlaceholder.select': 'Chọn mẫu...',
-  'settings.mapDefaultHint': 'Để trống cho OpenStreetMap (mặc định)',
+  'settings.mapDefaultHint': "Để trống để dùng bản đồ mặc định của ứng dụng (Amap khi có khóa Amap; nếu không thì OpenFreeMap)",
   'settings.mapHint': 'Mẫu URL cho ô bản đồ',
   'settings.mapProvider': 'Nhà cung cấp bản đồ',
   'settings.mapProviderHint':
@@ -75,8 +75,7 @@ const settings: TranslationStrings = {
   'settings.bookingLabels': 'Nhãn lộ trình đặt chỗ',
   'settings.bookingLabelsHint': 'Hiển thị tên ga/sân bay trên bản đồ. Khi tắt, chỉ có biểu tượng được hiển thị.',
   'settings.mapPoiPill': 'Khám phá các địa điểm trên bản đồ',
-  'settings.mapPoiPillHint':
-    'Hiển thị một danh mục trên bản đồ chuyến đi để tìm các nhà hàng, khách sạn lân cận và hơn thế nữa từ OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Hiển thị một danh mục trên bản đồ chuyến đi để tìm nhà hàng, khách sạn lân cận và hơn thế nữa. Dùng Amap khi có khóa; nếu không thì OpenStreetMap.',
   'settings.blurBookingCodes': 'Mã đặt chỗ mờ',
   'settings.optimizeFromAccommodation': 'Tối ưu hóa tuyến đường từ chỗ ở',
   'settings.optimizeFromAccommodationHint':

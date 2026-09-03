@@ -18,6 +18,7 @@ const mobileTrip: TranslationStrings = {
   'mobileTrip.filesPrev': '上一个文件',
   'mobileTrip.googleMaps': 'Google Maps',
   'mobileTrip.coMaps': 'CoMaps',
+  'mobileTrip.amap': 'Amap',
   'mobileTrip.icsDownload': '下载 .ics',
   'mobileTrip.icsSubscribe': '订阅日历',
   'mobileTrip.icsSubscribeSub': '在你的日历应用中自动更新',

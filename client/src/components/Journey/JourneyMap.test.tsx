@@ -34,10 +34,16 @@ vi.mock('leaflet', () => {
     off: vi.fn(),
     latLngToContainerPoint: vi.fn(() => ({ x: 0, y: 0 })),
   };
+  const tileLayer = vi.fn((_url?: string, options: Record<string, unknown> = {}) => ({
+    addTo: vi.fn(),
+    setUrl: vi.fn(),
+    remove: vi.fn(),
+    options,
+  }));
   return {
     default: {
       map: vi.fn(() => mockMap),
-      tileLayer: vi.fn(() => ({ addTo: vi.fn(), setUrl: vi.fn() })),
+      tileLayer,
       marker: vi.fn(() => mockMarker),
       polyline: vi.fn(() => { const line: any = { addTo: vi.fn(() => line), bindTooltip: vi.fn(() => line) }; return line }),
       divIcon: vi.fn(() => ({})),
@@ -45,7 +51,7 @@ vi.mock('leaflet', () => {
       layerGroup: vi.fn(() => ({ addLayer: vi.fn(), addTo: vi.fn(), remove: vi.fn() })),
     },
     map: vi.fn(() => mockMap),
-    tileLayer: vi.fn(() => ({ addTo: vi.fn(), setUrl: vi.fn() })),
+    tileLayer,
     marker: vi.fn(() => mockMarker),
     polyline: vi.fn(() => { const line: any = { addTo: vi.fn(() => line), bindTooltip: vi.fn(() => line) }; return line }),
     divIcon: vi.fn(() => ({})),
@@ -57,7 +63,10 @@ import React from 'react';
 import { render, act, fireEvent, waitFor } from '../../../tests/helpers/render';
 import { resetAllStores, seedStore } from '../../../tests/helpers/store';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useAuthStore } from '../../store/authStore';
 import { buildSettings } from '../../../tests/helpers/factories';
+import { AMAP_TILE_MAXZOOM, AMAP_VEC, MAP_MAX_ZOOM } from '../../constants/mapDefaults';
+import { toAmap } from '@trek/shared';
 import L from 'leaflet';
 import JourneyMap from './JourneyMap';
 import type { JourneyMapHandle } from './JourneyMap';
@@ -408,10 +417,51 @@ describe('JourneyMap', () => {
     });
   });
 
+  it('FE-COMP-JOURNEYMAP-027b: Amap tiles place a Beijing pin on GCJ', () => {
+    useAuthStore.setState({ hasAmapKey: true });
+    const beijing = [
+      { id: 'bj', lat: 39.907, lng: 116.391, title: 'Beijing', mood: null, entry_date: '2025-06-01' },
+    ];
+    render(<JourneyMap checkins={[]} entries={beijing} />);
+    const pos = vi.mocked(L.marker).mock.calls[0][0] as [number, number];
+    const gcj = toAmap(39.907, 116.391);
+    expect(pos[0]).toBeCloseTo(gcj.lat, 5);
+    expect(pos[1]).toBeCloseTo(gcj.lng, 5);
+  });
+
+  it('FE-COMP-JOURNEYMAP-027c: flipping onto Amap tiles rebuilds so pins shift to GCJ', () => {
+    const beijing = [
+      { id: 'bj', lat: 39.907, lng: 116.391, title: 'Beijing', mood: null, entry_date: '2025-06-01' },
+    ];
+    render(<JourneyMap checkins={[]} entries={beijing} />);
+    const mapsBefore = vi.mocked(L.map).mock.calls.length;
+    const firstPos = vi.mocked(L.marker).mock.calls[0][0] as [number, number];
+    expect(firstPos).toEqual([39.907, 116.391]);
+
+    act(() => {
+      seedStore(useSettingsStore, { settings: buildSettings({ map_tile_url: AMAP_VEC }) });
+    });
+
+    expect(vi.mocked(L.map).mock.calls.length).toBeGreaterThan(mapsBefore);
+    const lastPos = vi.mocked(L.marker).mock.calls.at(-1)![0] as [number, number];
+    const gcj = toAmap(39.907, 116.391);
+    expect(lastPos[0]).toBeCloseTo(gcj.lat, 5);
+    expect(lastPos[1]).toBeCloseTo(gcj.lng, 5);
+  });
+
   it('FE-COMP-JOURNEYMAP-027: a configured tile url overrides the default basemap', () => {
     seedStore(useSettingsStore, { settings: buildSettings({ map_tile_url: 'https://tiles.test/{z}/{x}/{y}.png' }) });
     render(<JourneyMap checkins={[]} entries={entriesWithCoords} />);
     expect(vi.mocked(L.tileLayer).mock.calls[0][0]).toBe('https://tiles.test/{z}/{x}/{y}.png');
+  });
+
+  it('FE-COMP-JOURNEYMAP-027d: Amap tiles overzoom native 18 at the map ceiling', () => {
+    seedStore(useSettingsStore, { settings: buildSettings({ map_tile_url: AMAP_VEC }) });
+    render(<JourneyMap checkins={[]} entries={entriesWithCoords} />);
+    const opts = vi.mocked(L.tileLayer).mock.calls[0][1] as { maxZoom: number; maxNativeZoom: number; updateWhenIdle: boolean }
+    expect(opts.maxZoom).toBe(MAP_MAX_ZOOM)
+    expect(opts.maxNativeZoom).toBe(AMAP_TILE_MAXZOOM)
+    expect(opts.updateWhenIdle).toBe(false)
   });
 
   it('FE-COMP-JOURNEYMAP-041: a basemap change restyles in place instead of rebuilding the map (#2097)', async () => {

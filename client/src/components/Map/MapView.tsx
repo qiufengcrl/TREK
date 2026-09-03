@@ -19,8 +19,9 @@ import { escapeHtml } from '@trek/shared'
 import type { Day, Reservation, RouteVia } from '../../types'
 import { POI_CATEGORY_BY_KEY, type Poi } from './poiCategories'
 import { resolveTrackColor, hasManualTrackColor } from './trackColors'
-import { OFM_POSITRON, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, MAP_MAX_ZOOM, SATELLITE_TILE_URL, SATELLITE_TILE_ATTRIBUTION, SATELLITE_TILE_MAXZOOM, attributionForTile } from '../../constants/mapDefaults'
-import { resolveBasemap } from '../../utils/tileUrl'
+import { OFM_POSITRON, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, MAP_MAX_ZOOM, attributionForTile, resolveSatelliteLayer } from '../../constants/mapDefaults'
+import { isAmapTileUrl, rasterTileLayerOptions, resolveBasemap } from '../../utils/tileUrl'
+import { fromDisplayLatLng, shiftLatLng, toDisplayLatLng, usesGcjDisplay } from '../../utils/mapCrs'
 import VectorBasemap from './VectorBasemap'
 import { useSettingsStore } from '../../store/settingsStore'
 import { MapLayerSwitcher } from './MapLayerSwitcher'
@@ -543,17 +544,56 @@ export const MapView = memo(function MapView({
   // that is decides which layer draws it. A saved raster template still wins,
   // the default is a vector style.
   const basemap = useMemo(() => resolveBasemap(tileUrl, OFM_POSITRON), [tileUrl])
-  const poiMarkers = useMemo(() => (pois as Poi[]).map((poi: Poi) => (
+  const baseLayer = useSettingsStore(s => s.settings.map_base_layer) || 'default'
+  const hasAmapKey = useAuthStore(s => s.hasAmapKey)
+  const gcjTiles = usesGcjDisplay(tileUrl, baseLayer === 'satellite', hasAmapKey || isAmapTileUrl(tileUrl))
+  const displayPlaces = useMemo(() => places.map((p: Place) => shiftLatLng(p, gcjTiles)), [places, gcjTiles])
+  const displayDayPlaces = useMemo(() => dayPlaces.map((p: Place) => shiftLatLng(p, gcjTiles)), [dayPlaces, gcjTiles])
+  const displayRoute = useMemo(() => {
+    if (!route || !gcjTiles) return route
+    return (route as [number, number][][]).map((seg) => seg.map(([lat, lng]) => {
+      const c = toDisplayLatLng(lat, lng, true)
+      return [c.lat, c.lng] as [number, number]
+    }))
+  }, [route, gcjTiles])
+  const displayVias = useMemo(() => (routeVias as RouteVia[]).map((v) => shiftLatLng(v, gcjTiles)), [routeVias, gcjTiles])
+  const displayCenter = useMemo<[number, number]>(() => {
+    const c = toDisplayLatLng(center[0], center[1], gcjTiles)
+    return [c.lat, c.lng]
+  }, [center, gcjTiles])
+  const handleMapClickDisplay = useCallback((e: L.LeafletMouseEvent) => {
+    if (!onMapClick) return
+    if (!gcjTiles) { onMapClick(e); return }
+    const wgs = fromDisplayLatLng(e.latlng.lat, e.latlng.lng, true)
+    onMapClick({ ...e, latlng: { ...e.latlng, lat: wgs.lat, lng: wgs.lng } })
+  }, [onMapClick, gcjTiles])
+  const handleMapContextDisplay = useCallback((e: L.LeafletMouseEvent) => {
+    if (!onMapContextMenu) return
+    if (!gcjTiles) { onMapContextMenu(e); return }
+    const wgs = fromDisplayLatLng(e.latlng.lat, e.latlng.lng, true)
+    onMapContextMenu({ ...e, latlng: { ...e.latlng, lat: wgs.lat, lng: wgs.lng } })
+  }, [onMapContextMenu, gcjTiles])
+  const handleViewportDisplay = useCallback((b: { south: number; west: number; north: number; east: number }) => {
+    if (!onViewportChange) return
+    if (!gcjTiles) { onViewportChange(b); return }
+    const sw = fromDisplayLatLng(b.south, b.west, true)
+    const ne = fromDisplayLatLng(b.north, b.east, true)
+    onViewportChange({ south: sw.lat, west: sw.lng, north: ne.lat, east: ne.lng })
+  }, [onViewportChange, gcjTiles])
+  const poiMarkers = useMemo(() => (pois as Poi[]).map((poi: Poi) => {
+    const display = shiftLatLng(poi, gcjTiles)
+    return (
     <Marker
       key={`poi-${poi.osm_id}`}
-      position={[poi.lat, poi.lng]}
+      position={[display.lat, display.lng]}
       icon={createPoiIcon(poi.category)}
       zIndexOffset={500}
       eventHandlers={{ click: () => onPoiClick?.(poi) }}
     >
       <Tooltip direction="top" offset={[0, -10]} opacity={1} className="map-tooltip">{poi.name}</Tooltip>
     </Marker>
-  )), [pois, onPoiClick])
+    )
+  }), [pois, gcjTiles, onPoiClick])
   const visibleReservations = useMemo(() => (
     visibleRouteReservations(reservations, { visibleConnectionIds, showTransitRoutes, selectedDayId, days })
   ), [reservations, visibleConnectionIds, showTransitRoutes, selectedDayId, days])
@@ -584,7 +624,10 @@ export const MapView = memo(function MapView({
   // camera belongs to the user. `framed` is false when no place has coordinates (a new trip),
   // and then the caller's center/zoom stands.
   const [initialView] = useState(() => {
-    const framed = computeMapViewport(dayPlaces.length > 0 ? dayPlaces : places, {
+    const sat = (useSettingsStore.getState().settings.map_base_layer || 'default') === 'satellite'
+    const gcj = usesGcjDisplay(tileUrl, sat, useAuthStore.getState().hasAmapKey || isAmapTileUrl(tileUrl))
+    const src = (dayPlaces.length > 0 ? dayPlaces : places).map((p: Place) => shiftLatLng(p, gcj))
+    const framed = computeMapViewport(src, {
       tileSize: TILE_SIZE_RASTER,
       padding: paddingBox,
     })
@@ -646,7 +689,7 @@ export const MapView = memo(function MapView({
   const placeIds = useMemo(() => places.map(p => p.id).join(','), [places])
   // Flattened [lat,lng] points of the selected day's route, so the bounds fit can
   // include the full polyline once it has been computed.
-  const routeCoords = useMemo<[number, number][]>(() => (route || []).flat() as [number, number][], [route])
+  const routeCoords = useMemo<[number, number][]>(() => (displayRoute || []).flat() as [number, number][], [displayRoute])
   useEffect(() => {
     if (!places || places.length === 0 || !placesPhotosEnabled) return
     const cleanups: (() => void)[] = []
@@ -717,7 +760,7 @@ export const MapView = memo(function MapView({
   // HTML5 drag does not exist — and the day plan is not on screen there anyway.
   const markersDraggable = !isTouchDevice
 
-  const markers = useMemo(() => places.map((place) => {
+  const markers = useMemo(() => displayPlaces.map((place) => {
     const isSelected = place.id === selectedPlaceId
     const pck = photoCacheKey(place)
     // A custom uploaded image wins over the auto-fetched thumb; otherwise fall back.
@@ -736,7 +779,7 @@ export const MapView = memo(function MapView({
         draggable={markersDraggable}
       />
     )
-  }), [places, selectedPlaceId, dayOrderMap, photoUrls, handleMarkerClick, handleMarkerHover, handleMarkerHoverOut, markersDraggable])
+  }), [displayPlaces, selectedPlaceId, dayOrderMap, photoUrls, handleMarkerClick, handleMarkerHover, handleMarkerHoverOut, markersDraggable])
 
   // Parsing track geometry is the expensive part (tracks run to tens of thousands
   // of points), so it hangs off `places` alone — a selection change must not
@@ -744,11 +787,15 @@ export const MapView = memo(function MapView({
   const gpxTracks = useMemo(() => places.flatMap(place => {
     if (!place.route_geometry) return []
     try {
-      const coords = JSON.parse(place.route_geometry) as [number, number][]
-      if (!coords || coords.length < 2) return []
+      const parsed = JSON.parse(place.route_geometry) as [number, number][]
+      if (!parsed || parsed.length < 2) return []
+      const coords = parsed.map(([lat, lng]) => {
+        const c = toDisplayLatLng(lat, lng, gcjTiles)
+        return [c.lat, c.lng] as [number, number]
+      })
       return [{ place, coords, cased: hasManualTrackColor(place), color: resolveTrackColor(place) }]
     } catch { return [] }
-  }), [places])
+  }), [places, gcjTiles])
 
   // Keeps the click handler out of the polyline memo below: `handleMarkerClick`
   // changes on every selection, and depending on it would redraw all tracks.
@@ -803,6 +850,11 @@ export const MapView = memo(function MapView({
   const CatIcon = TooltipOverlay ? getCategoryIcon(hoveredPlace.category_icon) : null
 
   const { position: userPosition, mode: trackingMode, error: trackingError, cycleMode: cycleTrackingMode } = useGeolocation()
+  const displayUserPosition = useMemo(() => {
+    if (!userPosition || !gcjTiles) return userPosition
+    const c = toDisplayLatLng(userPosition.lat, userPosition.lng, true)
+    return { ...userPosition, lat: c.lat, lng: c.lng }
+  }, [userPosition, gcjTiles])
   // Desktop browsers only get IP-based geolocation (city-level accuracy),
   // so the button would be misleading. Mobile, where real GPS lives, keeps it.
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -813,7 +865,6 @@ export const MapView = memo(function MapView({
     ? 'calc(var(--bottom-nav-h, 84px) + 20px + var(--day-panel-h, 0px) + 12px)'
     : 'calc(var(--bottom-nav-h, 84px) + 12px)'
 
-  const baseLayer = useSettingsStore(s => s.settings.map_base_layer) || 'default'
   const updateSetting = useSettingsStore(s => s.updateSetting)
   const isSatellite = baseLayer === 'satellite'
   const toggleBaseLayer = useCallback(() => {
@@ -823,6 +874,10 @@ export const MapView = memo(function MapView({
   const switcherBottom = hasDayDetail
     ? 'calc(var(--bottom-nav-h, 0px) + 20px + var(--day-panel-h, 0px) + 12px)'
     : 'calc(var(--bottom-nav-h, 0px) + 12px)'
+  const satellite = useMemo(
+    () => resolveSatelliteLayer(hasAmapKey || isAmapTileUrl(tileUrl)),
+    [hasAmapKey, tileUrl],
+  )
 
   return (
     <>
@@ -846,39 +901,44 @@ export const MapView = memo(function MapView({
           key remounts the raster layer on switch, else attribution/maxZoom stick
           at mount-time values. */}
       {isSatellite ? (
-        <TileLayer
-          key="satellite"
-          url={SATELLITE_TILE_URL}
-          attribution={SATELLITE_TILE_ATTRIBUTION}
-          maxZoom={SATELLITE_TILE_MAXZOOM}
-          keepBuffer={8}
-          updateWhenZooming={false}
-          updateWhenIdle={true}
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+        <>
+          <TileLayer
+            key={`satellite-${satellite.url}`}
+            url={satellite.url}
+            attribution={satellite.attribution}
+            {...rasterTileLayerOptions(satellite.url)}
+          />
+          {satellite.labelUrl ? (
+            <TileLayer
+              key={`satellite-label-${satellite.labelUrl}`}
+              url={satellite.labelUrl}
+              attribution={satellite.attribution}
+              {...rasterTileLayerOptions(satellite.labelUrl)}
+              zIndex={250}
+            />
+          ) : null}
+        </>
       ) : basemap.kind === 'vector' ? (
         <VectorBasemap style={basemap.style} />
       ) : (
-        <TileLayer
-          key="raster"
-          url={basemap.url}
-          attribution={attributionForTile(basemap.url)}
-          maxZoom={19}
-          keepBuffer={8}
-          updateWhenZooming={false}
-          updateWhenIdle={true}
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+        <>
+          <TileLayer
+            key={basemap.url}
+            url={basemap.url}
+            attribution={attributionForTile(basemap.url)}
+            {...rasterTileLayerOptions(basemap.url)}
+          />
+        </>
       )}
 
-      <MapController center={center} zoom={zoom} />
-      <BoundsController places={dayPlaces.length > 0 ? dayPlaces : places} routeCoords={dayPlaces.length > 0 ? routeCoords : []} fitKey={fitKey} paddingOpts={paddingOpts} framedOnMount={initialView.framed} />
-      <SelectionController places={places} selectedPlaceId={selectedPlaceId} dayPlaces={dayPlaces} paddingOpts={paddingOpts} />
-      <MapClickHandler onClick={onMapClick} />
-      <MapContextMenuHandler onContextMenu={onMapContextMenu} />
+      <MapController center={displayCenter} zoom={zoom} />
+      <BoundsController places={displayDayPlaces.length > 0 ? displayDayPlaces : displayPlaces} routeCoords={displayDayPlaces.length > 0 ? routeCoords : []} fitKey={fitKey} paddingOpts={paddingOpts} framedOnMount={initialView.framed} />
+      <SelectionController places={displayPlaces} selectedPlaceId={selectedPlaceId} dayPlaces={displayDayPlaces} paddingOpts={paddingOpts} />
+      <MapClickHandler onClick={onMapClick ? handleMapClickDisplay : null} />
+      <MapContextMenuHandler onContextMenu={onMapContextMenu ? handleMapContextDisplay : null} />
       <CameraHoverGuard movingRef={mapMovingRef} onMoveStart={clearHover} />
-      <ViewportController onViewportChange={onViewportChange} />
-      <LeafletLocationLayer position={userPosition} mode={trackingMode} />
+      <ViewportController onViewportChange={onViewportChange ? handleViewportDisplay : undefined} />
+      <LeafletLocationLayer position={displayUserPosition} mode={trackingMode} />
 
       <MarkerClusterGroup
         chunkedLoading
@@ -896,7 +956,7 @@ export const MapView = memo(function MapView({
       </MarkerClusterGroup>
 
       {/* Apple-Maps style: darker-blue casing under a bright-blue core, rounded. */}
-      {route && route.length > 0 && route.flatMap((seg, i) => seg.length > 1 ? [
+      {displayRoute && displayRoute.length > 0 && displayRoute.flatMap((seg, i) => seg.length > 1 ? [
         <Polyline
           key={`${i}-casing`}
           positions={seg}
@@ -919,12 +979,13 @@ export const MapView = memo(function MapView({
         showStats={showReservationStats}
         onEndpointClick={onReservationClick}
         roadRoutes={transportRoutes}
+        gcjTiles={gcjTiles}
       />
 
       {poiMarkers}
       {/* Charging stops / rest areas a plugin route places on the drawn day route.
           Host-vetted data (server-normalized), rendered as plain tone dots. */}
-      {(routeVias as RouteVia[]).map((v, i) => (
+      {displayVias.map((v, i) => (
         <Marker key={`route-via-${i}`} position={[v.lat, v.lng]} icon={routeViaIcon(v.tone)} zIndexOffset={800}>
           {(v.label || v.dwellSeconds != null) && (
             <Tooltip direction="top" offset={[0, -8]}>
@@ -935,8 +996,8 @@ export const MapView = memo(function MapView({
           )}
         </Marker>
       ))}
-      <PluginMapMarkers tripId={tripId} />
-      <PluginMapLayers tripId={tripId} />
+      <PluginMapMarkers tripId={tripId} gcjTiles={gcjTiles} />
+      <PluginMapLayers tripId={tripId} gcjTiles={gcjTiles} />
     </MapContainer>
     {isMobile && <LocationButton
       mode={trackingMode}

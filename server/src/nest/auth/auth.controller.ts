@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   Res,
   UploadedFile,
@@ -218,12 +219,13 @@ export class AuthController {
 
   @ManagedForbidden('validating a key spends the operator quota on a test click')
   @Get('validate-keys')
-  async validateKeys(@CurrentUser() user: User) {
-    const result = await this.profile.validateKeys(user.id);
+  async validateKeys(@CurrentUser() user: User, @Query('only') only?: string) {
+    const scoped = only === 'maps' || only === 'weather' || only === 'amap' ? only : undefined;
+    const result = await this.profile.validateKeys(user.id, scoped);
     if (result.error) {
       throw new HttpException({ error: result.error }, result.status!);
     }
-    return { maps: result.maps, weather: result.weather, maps_details: result.maps_details };
+    return { maps: result.maps, weather: result.weather, amap: result.amap, maps_details: result.maps_details };
   }
 
   @Get('app-settings')

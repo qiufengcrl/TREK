@@ -19,8 +19,12 @@ import {
   clearTileCache,
   MAX_TILES,
   TILE_CONCURRENCY,
+  bboxForTileIndex,
+  prefetchFallback,
   type TileBbox,
 } from '../../../src/sync/tilePrefetcher';
+import { AMAP_VEC, OFM_POSITRON } from '../../../src/constants/mapDefaults';
+import { toAmap } from '@trek/shared';
 import { offlineDb, clearAll, upsertSyncMeta } from '../../../src/db/offlineDb';
 import { setAuthed } from '../../../src/sync/authGate';
 import { buildPlace } from '../../helpers/factories';
@@ -76,6 +80,26 @@ describe('computeBbox', () => {
     const places = [buildPlace({ lat: 85.0, lng: 0 })];
     const bbox = computeBbox(places, 0.5)!;
     expect(bbox.maxLat).toBeLessThanOrEqual(85.0511);
+  });
+});
+
+describe('Amap prefetch CRS', () => {
+  it('prefetchFallback matches the planner: Amap raster when keyed, OFM otherwise', () => {
+    expect(prefetchFallback(true)).toBe(AMAP_VEC);
+    expect(prefetchFallback(false)).toBe(OFM_POSITRON);
+  });
+
+  it('bboxForTileIndex shifts a China bbox for Amap templates and leaves others alone', () => {
+    const bbox: TileBbox = { minLat: 39.9, maxLat: 40.0, minLng: 116.3, maxLng: 116.4 };
+    expect(bboxForTileIndex(bbox, OFM_POSITRON)).toEqual(bbox);
+    const shifted = bboxForTileIndex(bbox, AMAP_VEC);
+    const sw = toAmap(bbox.minLat, bbox.minLng);
+    const ne = toAmap(bbox.maxLat, bbox.maxLng);
+    expect(shifted.minLat).toBeCloseTo(Math.min(sw.lat, ne.lat), 5);
+    expect(shifted.maxLat).toBeCloseTo(Math.max(sw.lat, ne.lat), 5);
+    expect(shifted.minLng).toBeCloseTo(Math.min(sw.lng, ne.lng), 5);
+    expect(shifted.maxLng).toBeCloseTo(Math.max(sw.lng, ne.lng), 5);
+    expect(shifted.minLat).not.toBe(bbox.minLat);
   });
 });
 
@@ -170,6 +194,17 @@ describe('buildTileUrl', () => {
     const tmpl = 'https://tiles.example.com/{z}/{x}/{y}{r}.png';
     const url = buildTileUrl(tmpl, 10, 0, 0);
     expect(url).toBe('https://tiles.example.com/10/0/0.png');
+  });
+
+  it('rotates Amap subdomains 1–4 the way Leaflet does', () => {
+    const tmpl = 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}';
+    const url = buildTileUrl(tmpl, 10, 500, 300);
+    expect(url).toMatch(/^https:\/\/webrd0[1-4]\.is\.autonavi\.com\//);
+    const expected = ['1', '2', '3', '4'][Math.abs(500 + 300) % 4];
+    expect(url).toContain(`webrd0${expected}.is.autonavi.com`);
+    expect(url).toContain('x=500');
+    expect(url).toContain('y=300');
+    expect(url).toContain('z=10');
   });
 });
 
@@ -377,6 +412,14 @@ describe('prefetchTilesForTrip', () => {
     const calls = vi.mocked(fetch).mock.calls.length;
     expect(calls).toBeGreaterThan(0);
     expect(calls).toBeLessThanOrEqual(MAX_TILES);
+  });
+
+  it('empty template plus Amap fallback prefetches autonavi tiles', async () => {
+    await upsertSyncMeta({ tripId: 1, lastSyncedAt: Date.now(), status: 'idle', tilesBbox: null, filesCachedCount: 0 });
+    const places = [buildPlace({ trip_id: 1, lat: 39.907, lng: 116.391 })];
+    await prefetchTilesForTrip(1, places, '', false, undefined, AMAP_VEC);
+    const urls = vi.mocked(fetch).mock.calls.map(c => String(c[0]));
+    expect(urls.some(u => u.includes('autonavi.com'))).toBe(true);
   });
 });
 

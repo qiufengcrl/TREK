@@ -18,6 +18,7 @@ const mobileTrip: TranslationStrings = {
   'mobileTrip.filesPrev': 'Попередній файл',
   'mobileTrip.googleMaps': 'Google Maps',
   'mobileTrip.coMaps': 'CoMaps',
+  'mobileTrip.amap': 'Amap',
   'mobileTrip.icsDownload': 'Завантажити .ics',
   'mobileTrip.icsSubscribe': 'Підписатися на календар',
   'mobileTrip.icsSubscribeSub': 'Автоматично оновлюється у вашому календарі',

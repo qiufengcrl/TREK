@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  CalendarDays, Car, Compass, Footprints, Hotel, MapPin, Pencil, Plus, RotateCcw,
+  CalendarDays, Car, Compass, Footprints, Hotel, MapPin, Navigation, Pencil, Plus, RotateCcw,
   Route as RouteIcon, TramFront, Zap,
 } from 'lucide-react'
 import type { WeatherResult } from '@trek/shared'
@@ -14,7 +14,7 @@ import { useDayNotes } from '../../../../hooks/useDayNotes'
 import { RES_ICONS, getNoteIcon } from '../../../../components/Planner/DayPlanSidebar.constants'
 import { getDayBookendHotels, isDayInAccommodationRange } from '../../../../utils/dayOrder'
 import { splitReservationDateTime } from '../../../../utils/formatters'
-import { dayCoMapsUrl, dayGoogleMapsUrl, optimizeDayOrder } from '../lib/dayRoute'
+import { dayAmapUrl, dayCoMapsUrl, dayGoogleMapsUrl, optimizeDayOrder } from '../lib/dayRoute'
 import GoogleMapsIcon from '../../../../components/shared/GoogleMapsIcon'
 import { splitNoteTime } from '../lib/dayNotes'
 import { weatherIconFor } from '../plan/planTimelineModel'
@@ -29,7 +29,7 @@ interface DaySheetPayload {
  * Day-detail sheet ('day', glass card): 16-day weather (Open-Meteo via the
  * weather service, climate fallback), the day's bookings and notes, the
  * accommodation block and the day actions (rename, route on/off + profile,
- * optimize, transit search, Google-Maps export).
+ * optimize, transit search, Google Maps / Amap / CoMaps export).
  */
 export default function MDaySheet({ planner, shell }: MTripSheetsProps) {
   const { t, locale } = useTranslation()
@@ -193,6 +193,14 @@ export default function MDaySheet({ planner, shell }: MTripSheetsProps) {
     if (url) window.open(url, '_blank', 'noopener,noreferrer')
   }
 
+  const openInAmap = () => {
+    if (!day) return
+    const url = dayAmapUrl(
+      day, planner.days, dayAssignments, planner.tripAccommodations, optimizeFromAccommodation !== false,
+    )
+    if (url) window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   const addAccommodation = () => {
     if (!day) return
     shell.openSheet('accommodation', { dayId: day.id })
@@ -343,6 +351,16 @@ export default function MDaySheet({ planner, shell }: MTripSheetsProps) {
                   >
                     <GoogleMapsIcon size={13} />
                     {t('planner.openGoogleMaps')}
+                  </button>
+                )}
+                {routable && (
+                  <button
+                    type="button"
+                    onClick={openInAmap}
+                    className={`flex items-center gap-[5px] rounded-full px-3 py-[7px] text-[0.75rem] font-semibold text-m-ink ${INNER_CLS}`}
+                  >
+                    <Navigation size={13} strokeWidth={2} />
+                    {t('planner.openAmap')}
                   </button>
                 )}
                 {routable && (

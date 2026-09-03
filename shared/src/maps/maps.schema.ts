@@ -4,11 +4,10 @@ import { z } from 'zod';
  * Maps / geo API contract — single source of truth for the /api/maps endpoints.
  *
  * server/src/nest/maps/maps.service.ts talks to Nominatim/Overpass (and
- * optionally Google Places when a key is configured) and applies the SSRF guard
- * on every outbound URL. The place objects these return are provider-shaped and
- * vary by source, so the response schemas keep them as open records — the
- * contract pins down the request shapes and the stable envelope fields, not the
- * provider blobs.
+ * optionally Google Places / Amap when a key is configured) and applies the SSRF
+ * guard on every outbound URL. Place search responses stay provider-shaped open
+ * records; `POST /route` is a closed RouteWithLegs-shaped envelope so the client
+ * can swap Amap for public OSRM without changing UI code.
  *
  * Since the maps body-contract ratchet, the request schemas below are enforced
  * on the server via createZodDto wrappers (maps.dto.ts) and the global
@@ -18,7 +17,10 @@ import { z } from 'zod';
  * bespoke bodies in the controller.
  */
 
-const latLng = z.object({ lat: z.number(), lng: z.number() });
+const latLng = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
 
 export const mapsSearchRequestSchema = z.object({
   query: z.string().min(1),
@@ -54,6 +56,44 @@ export const mapsResolveUrlRequestSchema = z.object({
   url: z.string().min(1),
 });
 export type MapsResolveUrlRequest = z.infer<typeof mapsResolveUrlRequestSchema>;
+
+/**
+ * Server-proxied route planning (Amap when an instance key is set).
+ *
+ * Waypoints are WGS-84 — the same frame TREK stores and draws. The server
+ * converts at the Amap boundary and returns WGS geometry so the client never
+ * sees GCJ. `route: null` means "use the public OSRM fallback" (no key, or
+ * Amap refused); it is not an HTTP error.
+ */
+export const mapsRouteProfileSchema = z.enum(['driving', 'walking', 'cycling']);
+export type MapsRouteProfile = z.infer<typeof mapsRouteProfileSchema>;
+
+export const mapsRouteRequestSchema = z.object({
+  waypoints: z.array(latLng).min(2).max(30),
+  profile: mapsRouteProfileSchema.default('driving'),
+});
+export type MapsRouteRequest = z.infer<typeof mapsRouteRequestSchema>;
+
+export const mapsRouteLegSchema = z.object({
+  distance: z.number().nonnegative(),
+  duration: z.number().nonnegative(),
+});
+export type MapsRouteLeg = z.infer<typeof mapsRouteLegSchema>;
+
+/** Coordinates are `[lat, lng]` — same order as the client RouteWithLegs contract. */
+export const mapsRouteGeometrySchema = z.object({
+  coordinates: z.array(z.tuple([z.number(), z.number()])).min(2).max(10_000),
+  distance: z.number().nonnegative(),
+  duration: z.number().nonnegative(),
+  legs: z.array(mapsRouteLegSchema),
+});
+export type MapsRouteGeometry = z.infer<typeof mapsRouteGeometrySchema>;
+
+export const mapsRouteResultSchema = z.object({
+  route: mapsRouteGeometrySchema.nullable(),
+  source: z.enum(['amap', 'unavailable', 'amap_error']),
+});
+export type MapsRouteResult = z.infer<typeof mapsRouteResultSchema>;
 
 /** Provider-shaped place blob (Google/OSM fields differ); kept open by design. */
 const placeRecord = z.record(z.string(), z.unknown());

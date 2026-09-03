@@ -2,10 +2,11 @@ import { useEffect, useRef, useImperativeHandle, useCallback, type Ref } from 'r
 import L from 'leaflet'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useCartoApiKey } from '../../hooks/useTileUrl'
-import { isVectorStyle, resolveTileUrl } from '../../utils/tileUrl'
-import { OFM_DARK, OFM_POSITRON, attributionForTile } from '../../constants/mapDefaults'
+import { isAmapTileUrl, isVectorStyle, rasterTileLayerOptions, resolveTileUrl } from '../../utils/tileUrl'
+import { OFM_DARK, OFM_POSITRON, AMAP_VEC, MAP_MAX_ZOOM, attributionForTile } from '../../constants/mapDefaults'
+import { useAuthStore } from '../../store/authStore'
 import { attachVectorBasemap, type GlLeafletLayer } from '../Map/VectorBasemap'
-import { escapeHtml, type JourneyTrack } from '@trek/shared'
+import { escapeHtml, toAmap, type JourneyTrack } from '@trek/shared'
 
 export interface MapMarkerItem {
   id: string
@@ -155,7 +156,14 @@ function JourneyMap(
   const mapTileUrl = useSettingsStore(s => s.settings.map_tile_url)
   const storedCartoKey = useCartoApiKey()
   const cartoKey = cartoApiKey || storedCartoKey
-  const tileUrl = resolveTileUrl(mapTileUrl, dark ? OFM_DARK : OFM_POSITRON, cartoKey)
+  const hasAmapKey = useAuthStore(s => s.hasAmapKey)
+  // Prefer Amap for China installs, but keep OFM dark when the journey is in dark mode
+  // (Amap's raster preset has no dark variant).
+  const fallback = dark
+    ? OFM_DARK
+    : (hasAmapKey ? AMAP_VEC : OFM_POSITRON)
+  const tileUrl = resolveTileUrl(mapTileUrl, fallback, cartoKey)
+  const gcjTiles = isAmapTileUrl(tileUrl)
   // Read through a ref by the map effect, retiled in place by its own effect below:
   // the CARTO key reaches the store after the first render, and rebuilding the map
   // for that raced with the markers and layers already on it (#2097).
@@ -240,26 +248,27 @@ function JourneyMap(
       scrollWheelZoom: fullScreen ? true : false,
       dragging: true,
       touchZoom: true,
+      maxZoom: MAP_MAX_ZOOM,
     })
     mapRef.current = map
     cancelledRef.current = false
+
+    const toPos = (lat: number, lng: number): L.LatLngTuple => {
+      if (!gcjTiles) return [lat, lng]
+      const c = toAmap(lat, lng)
+      return [c.lat, c.lng]
+    }
 
     // The basemap is a vector style unless the user brought their own raster
     // template, so which layer draws it is decided per template rather than once.
     if (isVectorStyle(tileUrlRef.current)) {
       void attachVectorBasemap(map, tileUrlRef.current, glLayerRef, () => cancelledRef.current)
     } else {
-      const tiles = L.tileLayer(tileUrlRef.current, {
-        maxZoom: 18,
-        attribution: attributionForTile(tileUrlRef.current),
-        referrerPolicy: 'strict-origin-when-cross-origin',
-        // Leaflet defaults updateWhenIdle:true on mobile (waits for pan to settle
-        // before loading tiles). On the journey mobile combined view we flyTo
-        // constantly when switching cards, so tiles lag visibly — force eager
-        // updates and keep a larger ring of off-screen tiles ready.
-        updateWhenIdle: false,
-        keepBuffer: 4,
-      } as any)
+      const resolved = tileUrlRef.current
+      const tiles = L.tileLayer(resolved, {
+        ...rasterTileLayerOptions(resolved),
+        attribution: attributionForTile(resolved),
+      } as L.TileLayerOptions)
       tiles.addTo(map)
       tileLayerRef.current = tiles
     }
@@ -270,7 +279,7 @@ function JourneyMap(
     const allCoords: L.LatLngTuple[] = []
 
     if (stableTrail.length > 1) {
-      const coords = stableTrail.map(p => [p.lat, p.lng] as L.LatLngTuple)
+      const coords = stableTrail.map(p => toPos(p.lat, p.lng))
       L.polyline(coords, {
         color: '#6366f1', weight: 3, opacity: 0.4,
         dashArray: '6 4', lineCap: 'round',
@@ -283,7 +292,7 @@ function JourneyMap(
     // A white casing keeps them legible on satellite tiles, same as the planner map.
     for (const track of stableTracks) {
       if (track.points.length < 2) continue
-      const coords = track.points.map(([lat, lng]) => [lat, lng] as L.LatLngTuple)
+      const coords = track.points.map(([lat, lng]) => toPos(lat, lng))
       const color = track.color || TRACK_FALLBACK_COLOR
       L.polyline(coords, { color: '#ffffff', weight: 6, opacity: 0.75, lineCap: 'round', lineJoin: 'round' }).addTo(map)
       const line = L.polyline(coords, { color, weight: 3.5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' })
@@ -298,7 +307,7 @@ function JourneyMap(
 
     // route polyline — only in non-fullscreen (sidebar map) mode
     if (!fullScreen && items.length > 1) {
-      const routeCoords = items.map(i => [i.lat, i.lng] as L.LatLngTuple)
+      const routeCoords = items.map(i => toPos(i.lat, i.lng))
       L.polyline(routeCoords, {
         color: dark ? '#71717A' : '#A1A1AA',
         weight: 1.5,
@@ -310,7 +319,7 @@ function JourneyMap(
 
     // place markers
     items.forEach((item, i) => {
-      const pos: L.LatLngTuple = [item.lat, item.lng]
+      const pos: L.LatLngTuple = toPos(item.lat, item.lng)
       allCoords.push(pos)
 
       const icon = L.divIcon({
@@ -363,14 +372,36 @@ function JourneyMap(
       glLayerRef.current = null
       markersRef.current.clear()
     }
-  }, [entries, stableTrail, stableTracks, dark, fullScreen, paddingBottom])
+  }, [entries, stableTrail, stableTracks, dark, fullScreen, paddingBottom, gcjTiles])
 
   // Retile in place rather than through the effect above, which would drop every
   // marker and track it just drew. A vector basemap restyles instead, which also
   // avoids spending a WebGL context on every theme toggle.
   useEffect(() => {
-    if (isVectorStyle(tileUrl)) glLayerRef.current?.getMaplibreMap()?.setStyle(tileUrl)
-    else tileLayerRef.current?.setUrl(tileUrl)
+    const map = mapRef.current
+    if (!map) return
+    if (isVectorStyle(tileUrl)) {
+      glLayerRef.current?.getMaplibreMap()?.setStyle(tileUrl)
+      tileLayerRef.current?.remove()
+      tileLayerRef.current = null
+      return
+    }
+    const rasterOpts = {
+      ...rasterTileLayerOptions(tileUrl),
+      attribution: attributionForTile(tileUrl),
+    } as L.TileLayerOptions
+    if (!tileLayerRef.current) {
+      glLayerRef.current?.remove()
+      glLayerRef.current = null
+      const tiles = L.tileLayer(tileUrl, rasterOpts)
+      tiles.addTo(map)
+      tileLayerRef.current = tiles
+    } else {
+      tileLayerRef.current.setUrl(tileUrl)
+      if (tileLayerRef.current.options) {
+        Object.assign(tileLayerRef.current.options, rasterOpts)
+      }
+    }
   }, [tileUrl])
 
   // Photo layer (#1614). Its own effect on purpose: photos arriving must not tear
@@ -386,7 +417,13 @@ function JourneyMap(
       if (!photos?.length) return
 
       const group = L.layerGroup()
-      for (const cluster of clusterPhotos(map, photos)) {
+      const displayPhotos = gcjTiles
+        ? photos.map((p) => {
+          const c = toAmap(p.lat, p.lng)
+          return { ...p, lat: c.lat, lng: c.lng }
+        })
+        : photos
+      for (const cluster of clusterPhotos(map, displayPhotos)) {
         const marker = L.marker([cluster.lat, cluster.lng], {
           icon: L.divIcon({
             className: '',
@@ -414,7 +451,7 @@ function JourneyMap(
       photoLayerRef.current?.remove()
       photoLayerRef.current = null
     }
-  }, [photos, entries, stableTrail, stableTracks, dark, fullScreen, paddingBottom])
+  }, [photos, entries, stableTrail, stableTracks, dark, fullScreen, paddingBottom, gcjTiles])
 
   // react to activeMarkerId prop changes — runs after map is built
   useEffect(() => {

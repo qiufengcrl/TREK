@@ -48,6 +48,8 @@ const planner: TranslationStrings = {
   'planner.optimize': 'Optimiser',
   'planner.openGoogleMaps': 'Ouvrir dans Google Maps',
   'planner.openCoMaps': 'Ouvrir dans CoMaps',
+  'planner.openAmap': 'Ouvrir dans Amap',
+  'planner.amapBrand': 'Amap',
   'planner.selectDayHint': 'Sélectionnez un jour dans la liste de gauche pour voir le plan du jour',
   'planner.noPlacesForDay': 'Aucun lieu pour ce jour',
   'planner.addPlacesLink': 'Ajouter des lieux →',

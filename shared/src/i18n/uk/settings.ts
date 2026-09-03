@@ -23,7 +23,7 @@ const settings: TranslationStrings = {
   'settings.map': 'Карта',
   'settings.mapTemplate': 'Шаблон карти',
   'settings.mapTemplatePlaceholder.select': 'Виберіть шаблон...',
-  'settings.mapDefaultHint': 'Залиште порожнім для OpenStreetMap (за замовчуванням)',
+  'settings.mapDefaultHint': "Залиште порожнім для карти за замовчуванням (Amap за наявності ключа Amap, інакше OpenFreeMap)",
   'settings.mapHint': 'URL-шаблон для тайлів карти',
   'settings.mapProvider': 'Провайдер карти',
   'settings.mapProviderHint': 'Застосовується до Trip Planner та Journey. Atlas завжди використовує Leaflet.',
@@ -336,8 +336,7 @@ const settings: TranslationStrings = {
   'settings.passkey.lastUsed': 'Останнє використання',
   'settings.passkey.neverUsed': 'Не використовувався',
   'settings.mapPoiPill': 'Досліджуйте місця на карті',
-  'settings.mapPoiPillHint':
-    'Показувати на карті подорожі плашку категорій, щоб знаходити поблизу ресторани, готелі та інше з OpenStreetMap.',
+  'settings.mapPoiPillHint': 'Показувати на карті подорожі плашку категорій, щоб знаходити поблизу ресторани, готелі та інше. Якщо є ключ — Amap, інакше OpenStreetMap.',
   'settings.airtrail.title': 'AirTrail',
   'settings.airtrail.hint':
     'Підключіть свій самостійно розміщений AirTrail, щоб імпортувати та синхронізувати рейси. Створіть API-ключ в AirTrail у розділі Налаштування → Безпека.',

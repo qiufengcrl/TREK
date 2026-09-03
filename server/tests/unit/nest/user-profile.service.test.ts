@@ -195,6 +195,7 @@ describe('validateKeys', () => {
     expect(result.error).toMatch(/admin/i);
     expect(result.maps).toBe(false);
     expect(result.weather).toBe(false);
+    expect(result.amap).toBe(false);
   });
 
   it('AUTH-DB-016: returns { maps: false, weather: false } when no API keys are stored', async () => {
@@ -202,6 +203,7 @@ describe('validateKeys', () => {
     const result = await profile.validateKeys(user.id);
     expect(result.maps).toBe(false);
     expect(result.weather).toBe(false);
+    expect(result.amap).toBe(false);
     expect(result.maps_details).toBeNull();
   });
 
@@ -307,6 +309,20 @@ describe('validateKeys', () => {
 
     fetchSpy.mockRestore();
   });
+
+  it('AUTH-DB-113: only=amap skips the Google probe even when a maps key is stored', async () => {
+    const { user } = createAdmin(testDb);
+    testDb.prepare('UPDATE users SET maps_api_key = ? WHERE id = ?').run('test-key', user.id);
+    const fetchSpy = vi.spyOn(global, 'fetch');
+
+    const result = await profile.validateKeys(user.id, 'amap');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.maps).toBe(false);
+    expect(result.amap).toBe(false);
+    expect(result.maps_details).toBeNull();
+
+    fetchSpy.mockRestore();
+  });
 });
 
 describe('updateMapsKey / avatar', () => {
@@ -396,6 +412,14 @@ describe('instance-wide API keys', () => {
     expect(row.maps_api_key).toBe('instance-google-key');
   });
 
+  it('AUTH-DB-102b: an admin Amap key lands only in app_settings', () => {
+    const { user } = createAdmin(testDb);
+    const result = profile.updateApiKeys(user.id, { amap_api_key: 'amap-web-key' });
+    expect(result.changedKeys).toEqual(['amap_api_key']);
+    expect(instanceRow('amap_api_key')).toBe('amap-web-key');
+    expect(profile.getSettings(user.id).settings?.amap_api_key).toBe('amap-web-key');
+  });
+
   it('AUTH-DB-103: a non-admin save never touches the instance value', () => {
     const { user: admin } = createAdmin(testDb);
     profile.updateApiKeys(admin.id, { maps_api_key: 'admin-set' });
@@ -431,6 +455,14 @@ describe('instance-wide API keys', () => {
     const { user } = createUser(testDb);
     profile.updateMapsKey(user.id, 'members-own');
     expect(instanceRow('maps_api_key')).toBe('via-maps-key-route');
+  });
+
+  it('AUTH-DB-107b: updateSettings persists amap_api_key when it is the only field', () => {
+    const { user } = createAdmin(testDb);
+    const result = profile.updateSettings(user.id, { amap_api_key: 'amap-only' });
+    expect(result.success).toBe(true);
+    expect(result.changedKeys).toEqual(['amap_api_key']);
+    expect(instanceRow('amap_api_key')).toBe('amap-only');
   });
 
   it('AUTH-DB-107: updateSettings mirrors the key half without touching name/email handling', () => {

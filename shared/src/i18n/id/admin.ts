@@ -129,11 +129,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     'Pengguna tanpa 2FA harus menyelesaikan pengaturan di Pengaturan sebelum menggunakan aplikasi.',
   'admin.apiKeys': 'Kunci API',
-  'admin.apiKeysHint': 'Opsional. Mengaktifkan data tempat yang lebih lengkap seperti foto dan cuaca.',
+  'admin.apiKeysHint': 'Opsional. Kunci Amap dipakai lebih dulu untuk pencarian tempat, ubin, rute, dan cuaca di Tiongkok. Kunci Google menambahkan foto, rating, dan jam buka.',
+  'admin.amapKey': 'Kunci API Web Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Jika disetel, pencarian tempat, pelengkapan otomatis, detail, dan geokode terbalik mencoba Amap dulu. Hasil kosong atau error jatuh ke OpenStreetMap (Google dilewati). Kunci layanan web di console.amap.com. Jangan tempel di kolom Google.',
   'admin.mapsKey': 'Kunci API Google Maps',
   'admin.mapsKeyHint': 'Diperlukan untuk pencarian tempat. Dapatkan di console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Tanpa kunci API, OpenStreetMap digunakan untuk pencarian tempat. Dengan kunci API Google, foto, rating, dan jam buka juga bisa dimuat. Dapatkan di console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Dipakai jika tidak ada kunci Amap. Tanpa kunci Google atau Amap, pencarian memakai OpenStreetMap. Kunci Google juga bisa memuat foto, rating, dan jam buka. Dapatkan di console.cloud.google.com.',
   'admin.recommended': 'Direkomendasikan',
   'admin.weatherKey': 'Kunci API OpenWeatherMap',
   'admin.weatherKeyHint': 'Untuk data cuaca. Gratis di openweathermap.org',

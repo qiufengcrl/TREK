@@ -1,11 +1,12 @@
 import type { AssignmentPlace, Place } from '../../types'
+import { generateAmapUrl } from '../Map/RouteCalculator'
 import { getCoMapsUrlForPlace } from './placeCoMaps'
 import { getGoogleMapsUrlForPlace } from './placeGoogleMaps'
 import { getOpenStreetMapUrlForPlace } from './placeOpenStreetMap'
 
 type PlaceLike = Pick<Place | AssignmentPlace, 'name' | 'address' | 'lat' | 'lng' | 'google_place_id' | 'google_ftid'>
 
-export type NavigationAppId = 'google' | 'waze' | 'apple' | 'osm' | 'comaps'
+export type NavigationAppId = 'google' | 'amap' | 'waze' | 'apple' | 'osm' | 'comaps'
 
 export interface NavigationTarget {
   id: NavigationAppId
@@ -47,14 +48,10 @@ export function showsAppleMaps(): boolean {
  * places called "Bahnhof" — so a place TREK has no coordinates for reaches
  * neither app.
  *
- * Google is the exception and keeps the link it always had, because it can do
- * better than a name: `getGoogleMapsUrlForPlace` walks ftid, then place id,
- * then the details URL, which lands on the right entry inside a mall rather
- * than on the roof.
- *
- * Waze arms navigation, since driving is the only thing it does. The other
- * three open the place, which is what Google has always done here, and starting
- * navigation from there is one tap.
+ * Google is first because it can do better than a name: `getGoogleMapsUrlForPlace`
+ * walks ftid, then place id, then the details URL. Amap is next: the URI scheme
+ * does not need a Web API key, and it is the map people in China actually open.
+ * Waze arms navigation. Apple / OSM / CoMaps open the place.
  */
 export function getNavigationTargets(
   place: PlaceLike | null | undefined,
@@ -68,6 +65,10 @@ export function getNavigationTargets(
   if (googleUrl) targets.push({ id: 'google', label: 'Google Maps', url: googleUrl })
 
   if (place.lat != null && place.lng != null) {
+    // uri.amap.com does not need the Web API key; stock WGS is converted at the link.
+    const amapUrl = generateAmapUrl([{ lat: place.lat, lng: place.lng, name: place.name }])
+    if (amapUrl) targets.push({ id: 'amap', label: 'Amap', url: amapUrl })
+
     const ll = `${place.lat},${place.lng}`
     const q = name ? `q=${encodeURIComponent(name)}&` : ''
     targets.push({

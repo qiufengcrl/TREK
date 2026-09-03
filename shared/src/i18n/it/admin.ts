@@ -87,11 +87,12 @@ const admin: TranslationStrings = {
   'admin.requireMfaHint':
     "Gli utenti senza 2FA devono completare la configurazione in Impostazioni prima di usare l'app.",
   'admin.apiKeys': 'Chiavi API',
-  'admin.apiKeysHint': 'Opzionale. Abilita dati estesi per i luoghi come foto e meteo.',
+  'admin.apiKeysHint': 'Opzionale. Una chiave Amap viene usata per prima per ricerca, tile, itinerari e meteo in Cina. Una chiave Google aggiunge foto, valutazioni e orari.',
+  'admin.amapKey': 'Chiave API Web Amap (Gaode)',
+  'admin.amapKeyHintLong': 'Se impostata, ricerca, completamento automatico, dettagli e geocodifica inversa provano prima Amap. Un risultato vuoto o un errore passa a OpenStreetMap (Google viene saltato). Chiave Web service su console.amap.com. Non inserirla nel campo Google.',
   'admin.mapsKey': 'Chiave API Google Maps',
   'admin.mapsKeyHint': 'Richiesta per la ricerca dei luoghi. Ottienila su console.cloud.google.com',
-  'admin.mapsKeyHintLong':
-    'Senza una chiave API, OpenStreetMap viene utilizzato per la ricerca dei luoghi. Con una chiave API di Google, è possibile caricare anche foto, valutazioni e orari di apertura. Ottienine una su console.cloud.google.com.',
+  'admin.mapsKeyHintLong': 'Usata quando non c’è una chiave Amap. Senza chiave Google o Amap, la ricerca usa OpenStreetMap. Una chiave Google può anche caricare foto, valutazioni e orari. Ottienila su console.cloud.google.com.',
   'admin.recommended': 'Consigliato',
   'admin.weatherKey': 'Chiave API OpenWeatherMap',
   'admin.weatherKeyHint': 'Per i dati meteo. Gratuita su openweathermap.org',

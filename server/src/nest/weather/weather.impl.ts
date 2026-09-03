@@ -1,9 +1,22 @@
 import { readCappedJson } from '../../utils/cappedFetch';
+import { readEnv } from '../../app-config';
+import { outOfChina } from '@trek/shared';
+import { weatherAmap } from '../geo/amap.client';
 
 // Open-Meteo sits on the request path as a third party: without a deadline a hung
 // connection holds the caller until the socket gives up on its own. Every other
 // outbound client in the codebase carries one.
 const WEATHER_TIMEOUT_MS = 8000;
+
+/**
+ * Amap key for weather. Defaults to operator env; WeatherService replaces this
+ * with resolveApiKey (env → instance → …) on boot so Admin-set keys work too.
+ */
+let resolveWeatherAmapKey: () => string | null = () => readEnv().maps.amapApiKey || null;
+
+export function setWeatherAmapKeyResolver(fn: () => string | null): void {
+  resolveWeatherAmapKey = fn;
+}
 
 /**
  * Which slot of Open-Meteo's hourly series a HH:MM belongs to.
@@ -82,6 +95,66 @@ export interface HourlyEntry {
   main: string;
   wind: number;
   humidity: number;
+}
+
+/** Map Amap Chinese weather phrases onto the Open-Meteo-shaped `main` bucket. */
+function mapAmapWeatherMain(weather: string): string {
+  if (/雷/.test(weather)) return 'Thunderstorm';
+  if (/雪|冰雹/.test(weather)) return 'Snow';
+  if (/雨/.test(weather)) return 'Rain';
+  if (/雾|霾|沙|尘/.test(weather)) return 'Fog';
+  if (/晴/.test(weather)) return 'Clear';
+  if (/云|阴/.test(weather)) return 'Clouds';
+  return weather.trim() || 'Clouds';
+}
+
+/**
+ * China + Amap key → prefer Amap weather (GCJ-aligned city). Falls back to
+ * Open-Meteo on miss/error so overseas and keyless installs stay unchanged.
+ */
+async function tryAmapWeather(
+  lat: string,
+  lng: string,
+  date: string | undefined,
+): Promise<WeatherResult | null> {
+  const key = resolveWeatherAmapKey();
+  if (!key) return null;
+  const latN = Number.parseFloat(lat);
+  const lngN = Number.parseFloat(lng);
+  if (!Number.isFinite(latN) || !Number.isFinite(lngN) || outOfChina(latN, lngN)) return null;
+  try {
+    const raw = await weatherAmap(key, latN, lngN, date ? 'all' : 'base');
+    if (!raw) return null;
+    if (!date) {
+      const temp = Number.parseFloat(raw.temperature);
+      if (!Number.isFinite(temp)) return null;
+      const main = mapAmapWeatherMain(raw.weather);
+      return {
+        temp: Math.round(temp),
+        main,
+        description: raw.weather || main,
+        type: 'current',
+      };
+    }
+    const cast = raw.forecasts.find((f) => f.date === date);
+    if (!cast) return null;
+    const day = Number.parseFloat(cast.daytemp);
+    const night = Number.parseFloat(cast.nighttemp);
+    if (!Number.isFinite(day) || !Number.isFinite(night)) return null;
+    const weather = cast.dayweather || cast.nightweather;
+    const main = mapAmapWeatherMain(weather);
+    return {
+      temp: Math.round((day + night) / 2),
+      temp_max: Math.round(day),
+      temp_min: Math.round(night),
+      main,
+      description: weather || main,
+      type: 'forecast',
+    };
+  } catch (err) {
+    console.error('[Weather] Amap weather failed, falling through to Open-Meteo', err instanceof Error ? err.message : err);
+    return null;
+  }
 }
 
 interface OpenMeteoForecast {
@@ -237,6 +310,12 @@ async function _getWeatherImpl(
   time?: string,
 ): Promise<WeatherResult> {
   const ck = cacheKey(lat, lng, date ? `${date}T${time ?? ''}` : date);
+
+  const amap = await tryAmapWeather(lat, lng, date);
+  if (amap) {
+    setCache(ck, amap, date ? TTL_FORECAST_MS : TTL_CURRENT_MS);
+    return amap;
+  }
 
   if (date) {
     const cached = getCached(ck);
@@ -454,6 +533,15 @@ async function _getDetailedWeatherImpl(
   const diffDays = (targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
   const dateStr = targetDate.toISOString().slice(0, 10);
   const descriptions = lang === 'de' ? WMO_DESCRIPTION_DE : WMO_DESCRIPTION_EN;
+
+  if (diffDays <= 16) {
+    const amap = await tryAmapWeather(lat, lng, date);
+    if (amap) {
+      const result: WeatherResult = { ...amap, hourly: amap.hourly ?? [] };
+      setCache(ck, result, TTL_FORECAST_MS);
+      return result;
+    }
+  }
 
   // Climate / archive path (> 16 days out)
   if (diffDays > 16) {
